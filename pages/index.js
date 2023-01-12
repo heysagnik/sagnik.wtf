@@ -5,6 +5,7 @@ import App from "../components/app"
 import SectionHero from "../components/section-hero"
 import SectionWork from "../components/section-work"
 //import SectionMusic from "components/section-music"
+import { Analytics } from '@vercel/analytics/react';
 
 export default function Home(props) {
   return (
@@ -18,6 +19,7 @@ export default function Home(props) {
       <SectionWork />
       {/* <CommandMenu/> */}
       {/*<SectionMusic {...props} />*/}
+      <Analytics />
     </App>
   )
 }
