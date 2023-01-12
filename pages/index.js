@@ -4,6 +4,7 @@ import CommandMenu from "../components/command"
 import App from "../components/app"
 import SectionHero from "../components/section-hero"
 import SectionWork from "../components/section-work"
+import { Analytics } from '@vercel/analytics/react';
 //import SectionMusic from "components/section-music"
 
 export default function Home(props) {
@@ -16,6 +17,7 @@ export default function Home(props) {
       </Head>
       <SectionHero />
       <SectionWork />
+      <Analytics/>
       {/* <CommandMenu/> */}
       {/*<SectionMusic {...props} />*/}
     </App>
