@@ -9,8 +9,8 @@ const InnerCircle = styled.div`
   height: 4rem;
   background: linear-gradient(
     to top left,
-    hsl(${props => props.hue - 16}, 100%, 60%) 0%,
-    hsl(${props => props.hue}, 100%, 74%) 100%
+    hsl(16, 100%, 60%) 0%,
+    hsl(0, 100%, 74%) 100%
   );
   border-radius: 50%;
   display: flex;
@@ -55,11 +55,10 @@ export default function Component() {
     <OuterCircle>
       <InnerCircle >
         <Image
-          src="/images/avatar.png"
+          src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Smiling%20face%20with%20sunglasses/3D/smiling_face_with_sunglasses_3d.png"
           alt="avatar"
           height={54}
           width={54}
-          
           quality={100}
         />
       </InnerCircle>
