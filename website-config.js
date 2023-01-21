@@ -7,7 +7,7 @@ export const works = [
     background: "hsla(360, 100%, 98%, 1)",
   },
   {
-    name: "screeREC",
+    name: "screenREC",
     description: "A simple screen recorder",
     logo: "/images/logo-screenrec.png",
     link: "https://screen-rec.vercel.app",
@@ -20,12 +20,12 @@ export const works = [
     link: "http://tweetsc-com.vercel.app/",
     background: "hsla(55, 100%, 98%, 1)",
   },
-  {
-    name: "Open-Source Projects",
+  /*{
+    name: "Intrazeal",
     description: "Check out my GitHub profile",
     logo: "/images/open-source.png",
     link: "https://github.com/heysagnik/",
     background: "hsla(130, 100%, 98%, 1)",
-  },
+  },*/
   
 ]
