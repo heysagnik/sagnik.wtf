@@ -9,8 +9,8 @@ const InnerCircle = styled.div`
   height: 4rem;
   background: linear-gradient(
     to top left,
-    hsl(${props => props.hue - 16}, 100%, 60%) 0%,
-    hsl(${props => props.hue}, 100%, 74%) 100%
+    hsl(16, 100%, 60%) 0%,
+    hsl(0, 100%, 74%) 100%
   );
   border-radius: 50%;
   display: flex;
@@ -59,7 +59,6 @@ export default function Component() {
           alt="avatar"
           height={54}
           width={54}
-          
           quality={100}
         />
       </InnerCircle>
