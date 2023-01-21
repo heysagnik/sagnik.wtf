@@ -55,7 +55,7 @@ export default function Component() {
     <OuterCircle>
       <InnerCircle >
         <Image
-          src="/images/avatar.png"
+          src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Smiling%20face%20with%20sunglasses/3D/smiling_face_with_sunglasses_3d.png"
           alt="avatar"
           height={54}
           width={54}
