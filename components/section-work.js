@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Title from "../components/title-section";
 import Section from "../components/section";
 import BlockWork from "../components/block-work";
+import BookGalery  from "../components/BookGallery";
 
 import { works } from "../website-config";
 
@@ -24,6 +25,7 @@ export default function Component() {
         {works.map((work) => {
           return <BlockWork {...work} key={work.name} logo={work.logo} />;
         })}
+        <BookGalery />
       </ContentContainer>
     </Section>
   );

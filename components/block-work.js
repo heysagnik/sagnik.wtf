@@ -54,7 +54,7 @@ export default function Component({
   return (
     <BlockWork background={background} href={link} target="blank">
       <BottomPart>
-        <Image src={logo} alt={name} height={56} width={56} quality={100} />
+        <Image src={logo} alt={name} height={56} width={56} quality={100} style={{ pointerEvents: "none",userSelect: "none"  }}/>
         <Info>
           <Name>{name}</Name>
           <Description>{description}</Description>

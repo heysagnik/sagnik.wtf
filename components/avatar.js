@@ -7,11 +7,7 @@ import { AppContext } from "../store"
 const InnerCircle = styled.div`
   width: 4rem;
   height: 4rem;
-  background: linear-gradient(
-    to top left,
-    hsl(16, 100%, 60%) 0%,
-    hsl(0, 100%, 74%) 100%
-  );
+  background-color: #f5f5f5;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -55,11 +51,13 @@ export default function Component() {
     <OuterCircle>
       <InnerCircle >
         <Image
-          src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Smiling%20face%20with%20sunglasses/3D/smiling_face_with_sunglasses_3d.png"
+          className="avatar"
+          src="https://em-content.zobj.net/source/microsoft-teams/337/smiling-face-with-sunglasses_1f60e.png"
           alt="avatar"
           height={54}
           width={54}
           quality={100}
+          style={{ pointerEvents: "none",userSelect: "none" , }}
         />
       </InnerCircle>
     </OuterCircle>

@@ -11,6 +11,7 @@
   "dependencies": {
     "@next/font": "13.1.1",
     "@vercel/analytics": "^0.1.7-beta.1",
+    "clsx": "^1.2.1",
     "cmdk": "^0.1.21",
     "color": "^4.2.3",
     "next": "13.1.1",
