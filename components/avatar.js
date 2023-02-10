@@ -52,7 +52,7 @@ export default function Component() {
       <InnerCircle >
         <Image
           className="avatar"
-          src="https://em-content.zobj.net/source/microsoft-teams/337/smiling-face-with-sunglasses_1f60e.png"
+          src="https://cdn.dribbble.com/users/112330/screenshots/16392696/media/2e10c7e8323ee72576c6dbfcb72e12fe.png"
           alt="avatar"
           height={54}
           width={54}
