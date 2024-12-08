@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Theme } from "@radix-ui/themes";
+import Footer from '@/components/Footer'; // Import Footer
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -12,6 +14,18 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
+const Wotfard = localFont({
+  src: "./fonts/wotfard.woff2",
+  variable: "--font-wotfard",
+  weight: "100 900",
+});
+
+const Cartograph = localFont({
+  src: "./fonts/cartograph-regular-italic.woff2",
+  variable: "--font-cartograph",
+  weight: "100 900",
+});
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -26,9 +40,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${Wotfard.variable} ${Cartograph.variable} antialiased min-h-screen p-8 md:p-24`}
       >
         {children}
+        <div className="max-w-2xl mx-auto">
+        <hr className=" border-t border-gray-400" />
+        <Footer /> {/* Include Footer here */}
+        </div>
       </body>
     </html>
   );

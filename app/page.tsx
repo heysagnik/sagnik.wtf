@@ -1,101 +1,128 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from 'next/link';
+import { Inter } from 'next/font/google';
+import Name from '@/components/Name';
+import { useState } from 'react';
+import DialogContent from '@/components/Dialog';
+import Gallery from '@/components/Gallery';
+import { motion } from 'framer-motion';
+
+const inter = Inter({ subsets: ['latin'] });
+
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 10,
+  },
+  in: {
+    opacity: 1,
+    y: 0,
+  },
+  out: {
+    opacity: 0,
+    y: -10,
+  },
+};
+
+const pageTransition = {
+  type: 'tween',
+  duration: 0.3,
+};
+
+const Home: React.FC = () => {
+  const [isCollegeDialogOpen, setIsCollegeDialogOpen] = useState(false);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <motion.main
+      className={`min-h-screen ${inter.className}`}
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+    >
+      <div className="max-w-2xl mx-auto">
+        <Name />
+        <div className="space-y-4">
+          <p className="mt-2">
+            I'm a product developer and entrepreneur who turns wild ideas into reality. Currently, I'm pursuing my graduation at{' '}
+            <span
+              className="cursor-pointer text-blue-500 hover:underline"
+              onClick={() => setIsCollegeDialogOpen(true)}
+            >
+              VIT University
+            </span>{' '}
+            in Bhopal.
+          </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          {/* Dialog for VIT University */}
+          <DialogContent
+            title="VIT University"
+            imgSrc="/vit.jpg"
+            alt="College"
+            isOpen={isCollegeDialogOpen}
+            onClose={() => setIsCollegeDialogOpen(false)}
+          />
+
+          <p className="mt-2">
+            I’ve racked up some serious experience working at{' '}
+            <Link href="/work" className="text-blue-500 hover:underline">
+              Intrazeal
+            </Link>{' '}
+            and{' '}
+            <Link href="/work" className="text-blue-500 hover:underline">
+              raid.farm
+            </Link>{' '}
+            (now induced.ai). Having co-founded startups such as{' '}
+            <Link href="/work" className="text-blue-500 hover:underline">
+              SpotOn
+            </Link>
+            ,{' '}
+            <Link href="/work" className="text-blue-500 hover:underline">
+              Bleesie
+            </Link>
+            , and{' '}
+            <Link href="/work" className="text-blue-500 hover:underline">
+              docq
+            </Link>
+            , I’ve navigated the startup scene like a pro.
+          </p>
+
+          <p className="mt-2">
+            Beyond the screen, I'm all about traveling, binge-watching movies, and vibing to music. In my downtime, I'm a side project ninja, freelancing wizard, and open-source contributor. Plus, I've got hackathon wins under my belt to back it up.
+          </p>
+
+          <p className="mt-2">
+            My mission? To build sleek, polished products that make life easier and a whole lot more interesting.
+          </p>
+
+          <p className="mt-2">
+            You can reach me at{' '}
+            <Link href="https://twitter.com/heysagnik" className="text-blue-500 hover:underline">
+              @heysagnik
+            </Link>{' '}
+            or{' '}
+            <Link href="mailto:sahoosagnik1@gmail.com" className="text-blue-500 hover:underline">
+              sahoosagnik1@gmail.com
+            </Link>
+            .
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        
+        <Gallery/>
+        {/* <div className="mt-12 flex justify-between text-gray-500">
+          <span>2024</span>
+          <span>Family Values</span>
+          <span>08/07</span>
+        </div>
+
+         */}
+       
+      </div>
+      
+    </motion.main>
   );
-}
+};
+
+export default Home;
