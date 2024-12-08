@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Name: React.FC = () => {
     return (
@@ -33,7 +34,7 @@ const Name: React.FC = () => {
             </h1>
             <div className="flex items-center space-x-2 mt-2">
                 <span>
-                    <img 
+                    <Image
                         src="/beach-emoji.png" 
                         alt="Beach emoji"
                         className="h-5 w-5"

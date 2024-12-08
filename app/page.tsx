@@ -46,7 +46,7 @@ const Home: React.FC = () => {
         <Name />
         <div className="space-y-4">
           <p className="mt-2">
-            I'm a product developer and entrepreneur who turns wild ideas into reality. Currently, I'm pursuing my graduation at{' '}
+            I&apos;m a product developer and entrepreneur who turns wild ideas into reality. Currently, I&apos;m pursuing my graduation at{' '}
             <span
               className="cursor-pointer text-blue-500 hover:underline"
               onClick={() => setIsCollegeDialogOpen(true)}
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
           </p>
 
           <p className="mt-2">
-            Beyond the screen, I'm all about traveling, binge-watching movies, and vibing to music. In my downtime, I'm a side project ninja, freelancing wizard, and open-source contributor. Plus, I've got hackathon wins under my belt to back it up.
+            Beyond the screen, I&apos;m all about traveling, binge-watching movies, and vibing to music. In my downtime, I&apos;m a side project ninja, freelancing wizard, and open-source contributor. Plus, I&apos;ve got hackathon wins under my belt to back it up.
           </p>
 
           <p className="mt-2">
