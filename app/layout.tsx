@@ -28,8 +28,10 @@ export const metadata: Metadata = {
     "Software Engineer",
     "Portfolio",
   ],
+  
   openGraph: {
     title: "Sagnik Sahoo – Product Developer & Entrepreneur",
+    siteName: "Sagnik Sahoo",
     description:
       "19-year-old product developer and entrepreneur building sleek products that make life easier.",
     type: "website",

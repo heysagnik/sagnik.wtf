@@ -97,17 +97,13 @@ const Home: React.FC = () => {
             My mission? To build sleek, polished products that make life easier and a whole lot more interesting.
           </p>
 
-          <p className="mt-2">
-            You can reach me at{' '}
-            <Link href="https://twitter.com/heysagnik" className="text-blue-500 hover:underline">
-              @heysagnik
-            </Link>{' '}
-            or{' '}
+            <p className="mt-2">
+            Best way to reach me is twitter DMs or{' '}
             <Link href="mailto:sahoosagnik1@gmail.com" className="text-blue-500 hover:underline">
-              sahoosagnik1@gmail.com
+            sahoosagnik1@gmail.com
             </Link>
-            .
-          </p>
+            . I go by @heysagnik on most places online.
+            </p>
         </div>
         
         <Gallery/>
