@@ -13,6 +13,7 @@
     "@radix-ui/themes": "^3.1.6",
     "@tabler/icons-react": "^3.24.0",
     "@types/lodash": "^4.17.13",
+    "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.13.1",

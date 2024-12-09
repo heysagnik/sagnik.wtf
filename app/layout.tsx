@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from '@vercel/analytics/next';
 import Footer from '@/components/Footer'; // Import Footer
 
 const Wotfard = localFont({
@@ -70,6 +71,7 @@ export default function RootLayout({
         className={`${Wotfard.variable} ${Cartograph.variable} antialiased min-h-screen p-8 md:p-24 `}
       >
         {children}
+        <Analytics/>
         <SpeedInsights />
         <div className="max-w-2xl mx-auto ">
           <hr className="border-t border-gray-400" />
