@@ -34,10 +34,11 @@ const Name: React.FC = () => {
             </h1>
             <div className="flex items-center space-x-2 mt-2">
                 <span>
-                    <Image
+                    <img
                         src="/beach-emoji.png" 
                         alt="Beach emoji"
                         className="h-5 w-5"
+                      
                     />
                 </span>
                 <p className="text-gray-500">
