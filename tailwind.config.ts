@@ -9,7 +9,10 @@ const config: Config = {
   ],
   theme: {
   	extend: {
-  		colors: {
+		fontFamily: {
+			'instrument-serif': ['"Instrument Serif"', 'serif'],
+      },
+  		colors: { 
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -39,7 +42,7 @@ const config: Config = {
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
-  			},
+  			}, 
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
@@ -55,7 +58,13 @@ const config: Config = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+		backgroundImage: {
+            'grid-black': 'linear-gradient(to right, rgb(0 0 0 / 0.15) 1.5px, transparent 1.5px), linear-gradient(to bottom, rgb(0 0 0 / 0.15) 1.5px, transparent 1.5px)',
+		},
+		backgroundSize: {
+		    'grid': '40px 40px',
+		}
   	}
   },
   plugins: [require("tailwindcss-animate")],
