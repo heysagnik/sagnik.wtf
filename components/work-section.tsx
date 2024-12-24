@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useScroll, useSpring } from 'framer-motion'
+import { useScroll, useSpring, useTransform, motion, useAnimation, Variants } from 'framer-motion'
+import Image from 'next/image'
 import { Plus } from 'lucide-react'
+import { backgroundStyles } from './background'
+import { section } from 'framer-motion/m'
 
 interface Project {
   id: string
@@ -16,7 +19,6 @@ interface Project {
   }
 }
 
-// Add responsive breakpoints
 const BREAKPOINTS = {
   sm: 640,
   md: 768,
@@ -24,65 +26,43 @@ const BREAKPOINTS = {
   xl: 1280
 }
 
-// Add responsive card sizes
-const CARD_SIZES = {
-  sm: {
-    width: 260,
-    height: 360,
-    fontSize: {
-      title: 20,
-      description: 14
-    }
-  },
-  md: {
-    width: 300, 
-    height: 420,
-    fontSize: {
-      title: 26,
-      description: 16  
-    }
-  }
-}
+const MAX_SPREAD_THRESHOLD = 1.0
 
-// Add max spread threshold
-const MAX_SPREAD_THRESHOLD = 0.55;
-
-// Update project positions based on screen size
-const getProjectPositions = (screenWidth: number) => {
+const getProjectPositions = (screenWidth: number): Project[] => {
   const isMobile = screenWidth < BREAKPOINTS.md
-  const scale = isMobile ? 0.6 : 1
-
+  const scale = isMobile ? 0.8 : 1 // Increased scale for better visibility on mobile
+  
   return [
     {
       id: '1',
       title: 'Project One',
       description: 'Some description',
-      image: '/placeholder.svg?height=400&width=600',
+      image: '/placeholder.png',
       position: { 
-        x: -800 * scale, 
-        y: 120 * scale, 
+        x: -900 * scale,
+        y: 120 * scale,
         rotate: -15
       }
     },
     {
-      id: '2',
+      id: '2', 
       title: 'Project Two',
       description: 'Some description',
-      image: '/placeholder.svg?height=400&width=600',
-      position: { 
-        x: -400 * scale, 
-        y: -80 * scale, 
+      image: '/placeholder.png',
+      position: {
+        x: -450 * scale,
+        y: -80 * scale,
         rotate: -8
       }
     },
     {
       id: '3',
-      title: 'Project Three',
+      title: 'Project Three', 
       description: 'Some description',
-      image: '/placeholder.svg?height=400&width=600',
-      position: { 
-        x: 0 * scale, 
-        y: 40 * scale, 
+      image: '/placeholder.png',
+      position: {
+        x: 0 * scale,
+        y: 40 * scale,
         rotate: 0
       }
     },
@@ -90,41 +70,124 @@ const getProjectPositions = (screenWidth: number) => {
       id: '4',
       title: 'Project Four',
       description: 'Some description',
-      image: '/placeholder.svg?height=400&width=600',
-      position: { 
-        x: 300 * scale, 
-        y: -40 * scale, 
-        rotate: 6
+      image: '/placeholder.png',
+      position: {
+        x: 450 * scale,
+        y: -40 * scale,
+        rotate: 8 
       }
     },
     {
       id: '5',
       title: 'Project Five',
       description: 'Some description',
-      image: '/placeholder.svg?height=400&width=600',
-      position: { 
-        x: 600 * scale, 
-        y: 100 * scale, 
-        rotate: 12
+      image: '/placeholder.png',
+      position: {
+        x: 900 * scale,
+        y: 100 * scale,
+        rotate: 15
       }
     }
   ]
 }
 
+interface ProjectCardProps {
+  project: Project
+  smoothProgress: any
+  isMobile: boolean
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, smoothProgress, isMobile }) => {
+  if (isMobile) {
+    return (
+      <div className="w-72 bg-white shadow-lg rounded-lg overflow-hidden flex flex-col hover:shadow-2xl transition-shadow duration-300 mb-12">
+        <div className="relative w-full h-64">
+          <Image
+            src={project.image}
+            alt={project.title}
+            fill
+            sizes="100vw"
+            style={{objectFit: "cover"}}
+            quality={100}
+            priority
+          />
+          <div className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2">
+            <Plus className="text-white" size={16} />
+          </div>
+        </div>
+        <div className="w-full backdrop-blur-md bg-white/20 p-6 border border-white/30">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{project.title}</h3>
+          <p className="text-base text-gray-800">{project.description}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Create transformed motion values based on scroll progress
+  const translateX = useTransform(smoothProgress, [0, 1], [0, project.position.x * MAX_SPREAD_THRESHOLD])
+  const translateY = useTransform(smoothProgress, [0, 1], [0, project.position.y * MAX_SPREAD_THRESHOLD])
+  const rotate = useTransform(smoothProgress, [0, 1], [0, project.position.rotate * MAX_SPREAD_THRESHOLD])
+
+  return (
+    <motion.div
+      className="absolute cursor-pointer"
+      style={{
+        translateX,
+        translateY,
+        rotate
+      }}
+      transition={{ type: 'spring', stiffness: 100, damping: 30 }}
+      drag
+      dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
+      dragElastic={0.2}
+      whileDrag={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(0,0,0,0.2)" }}
+    >
+      <div className="relative w-72 h-96 bg-white shadow-lg rounded-lg overflow-hidden flex flex-col hover:shadow-2xl transition-shadow duration-300">
+        <div className="relative flex-1">
+          <Image
+            src={project.image}
+            alt={project.title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{objectFit: "cover"}}
+            quality={100}
+          />
+          <div className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2">
+            <Plus className="text-white" size={16} />
+          </div>
+        </div>
+        <div className="w-full backdrop-blur-md bg-white/20 p-4 border border-white/30">
+          <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
+          <p className="text-sm text-gray-800">{project.description}</p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 export function WorkSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const [projects, setProjects] = useState(getProjectPositions(0))
+  const [projects, setProjects] = useState<Project[]>(getProjectPositions(0))
+  const controls = useAnimation()
 
-  // Update projects when screen size changes
   useEffect(() => {
-    setProjects(getProjectPositions(dimensions.width))
-  }, [dimensions.width])
+    const updateDimensions = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+      setProjects(getProjectPositions(window.innerWidth))
+    }
+
+    updateDimensions()
+    window.addEventListener('resize', updateDimensions)
+    return () => window.removeEventListener('resize', updateDimensions)
+  }, [])
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start 80%", "end 20%"]
+    offset: ["start 90%", "end 20%"]
   })
 
   const smoothProgress = useSpring(scrollYProgress, {
@@ -133,185 +196,123 @@ export function WorkSection() {
     restDelta: 0.001
   })
 
-  // Handle window resize with debounce
   useEffect(() => {
-    let resizeTimeout: NodeJS.Timeout
-    const updateDimensions = () => {
-      if (typeof window !== 'undefined') {
-        clearTimeout(resizeTimeout)
-        resizeTimeout = setTimeout(() => {
-          setDimensions({
-            width: window.innerWidth,
-            height: window.innerHeight
-          })
-        }, 150)
+    const handleScroll = () => {
+      const element = document.getElementById('work-section'); // Updated id
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+          controls.start("visible");
+        }
+      }
+    };
+
+    handleScroll(); // Initial check
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [controls]);
+
+  const containerVariants: Variants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.02
       }
     }
+  };
 
-    updateDimensions()
-    window.addEventListener('resize', updateDimensions)
-    return () => window.removeEventListener('resize', updateDimensions)
-  }, [])
+  const letterVariants: Variants = {
+    hidden: { opacity: 0.1 },
+    visible: { opacity: 1 }
+  };
 
-  useEffect(() => {
-    if (!canvasRef.current) return
-    const ctx = canvasRef.current.getContext('2d')
-    if (!ctx) return
-
-    // Enable high DPI for better rendering on retina displays
-    const setCanvasDPI = () => {
-      const dpr = window.devicePixelRatio || 1
-      canvasRef.current!.width = dimensions.width * dpr
-      canvasRef.current!.height = dimensions.height * dpr
-      ctx.scale(dpr, dpr)
-    }
-
-    setCanvasDPI()
-
-    const drawProjectCard = (
-      x: number,
-      y: number,
-      width: number,
-      height: number,
-      rotation: number,
-      project: Project
-    ) => {
-      // Get card sizes based on screen width
-      const cardSizes = dimensions.width < BREAKPOINTS.md ? CARD_SIZES.sm : CARD_SIZES.md
-
-      ctx.save()
-      ctx.translate(x, y)
-      ctx.rotate((rotation * Math.PI) / 180)
-
-      // Shadow for depth
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)'
-      ctx.shadowBlur = 15
-      ctx.shadowOffsetY = 5
-
-      // Draw rounded rectangle
-      const radius = 20
-      ctx.beginPath()
-      ctx.moveTo(-width / 2 + radius, -height / 2)
-      ctx.lineTo(width / 2 - radius, -height / 2)
-      ctx.quadraticCurveTo(width / 2, -height / 2, width / 2, -height / 2 + radius)
-      ctx.lineTo(width / 2, height / 2 - radius)
-      ctx.quadraticCurveTo(width / 2, height / 2, width / 2 - radius, height / 2)
-      ctx.lineTo(-width / 2 + radius, height / 2)
-      ctx.quadraticCurveTo(-width / 2, height / 2, -width / 2, height / 2 - radius)
-      ctx.lineTo(-width / 2, -height / 2 + radius)
-      ctx.quadraticCurveTo(-width / 2, -height / 2, -width / 2 + radius, -height / 2)
-      ctx.closePath()
-
-      // Card background
-      ctx.fillStyle = '#ffffff'
-      ctx.fill()
-
-      // Subtle gradient overlay
-      const gradient = ctx.createLinearGradient(
-        -width / 2, -height / 2,
-        -width / 2, height / 2
-      )
-      gradient.addColorStop(0, 'rgba(0,0,0,0)')
-      gradient.addColorStop(0.8, 'rgba(0,0,0,0.3)')
-      gradient.addColorStop(1, 'rgba(0,0,0,0.5)')
-      ctx.fillStyle = gradient
-      ctx.fill()
-
-      // Project Title
-      ctx.fillStyle = 'white'
-      ctx.font = `bold ${cardSizes.fontSize.title}px Arial`
-      ctx.textAlign = 'left'
-      ctx.fillText(project.title, -width / 2 + 20, height / 2 - 60)
-
-      // Project Description
-      ctx.font = `${cardSizes.fontSize.description}px Arial`
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'
-      ctx.fillText(project.description, -width / 2 + 20, height / 2 - 25)
-
-      // Plus Button
-      ctx.beginPath()
-      ctx.arc(width / 2 - 30, height / 2 - 30, 18, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,0,0,0.2)'
-      ctx.fill()
-
-      // Plus Icon
-      ctx.strokeStyle = 'white'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.moveTo(width / 2 - 35, height / 2 - 30)
-      ctx.lineTo(width / 2 - 25, height / 2 - 30)
-      ctx.moveTo(width / 2 - 30, height / 2 - 35)
-      ctx.lineTo(width / 2 - 30, height / 2 - 25)
-      ctx.stroke()
-
-      ctx.restore()
-    }
-
-    const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-
-    const animate = () => {
-      const progressRaw = smoothProgress.get()
-      // Clamp the progress at MAX_SPREAD_THRESHOLD
-      const progress = Math.min(easeInOut(progressRaw), MAX_SPREAD_THRESHOLD)
-      ctx.clearRect(0, 0, dimensions.width, dimensions.height)
-
-      // Get card sizes based on screen width
-      const cardSizes = dimensions.width < BREAKPOINTS.md ? CARD_SIZES.sm : CARD_SIZES.md
-
-      projects.forEach((project) => {
-        const CARD_WIDTH = cardSizes.width
-        const CARD_HEIGHT = cardSizes.height
-
-        // Adjust spread multiplier to respect threshold
-        const spreadMultiplier = dimensions.width < BREAKPOINTS.md ? 
-          (1 + (progress * 0.2)) : 
-          (1 + (progress * 0.5))
-          
-  
-          const startX = (dimensions.width / 2) 
-          const startY = dimensions.height / 2
-          const endX = startX + (project.position.x * spreadMultiplier)
-          const endY = startY + (project.position.y * spreadMultiplier)
-  
-          const currentX = startX + (endX - startX) * progress
-          const currentY = startY + (endY - startY) * progress
-          const currentRotate = project.position.rotate * progress
-          const currentScale = dimensions.width < BREAKPOINTS.md ?
-            (0.4 + (0.4 * progress)) :
-            (0.5 + (0.5 * progress))
-
-        drawProjectCard(
-          currentX,
-          currentY,
-          CARD_WIDTH * currentScale,
-          CARD_HEIGHT * currentScale,
-          currentRotate,
-          project
-        )
-      })
-
-      requestAnimationFrame(animate)
-    }
-
-    animate()
-
-    return () => {
-      ctx.clearRect(0, 0, dimensions.width, dimensions.height)
-    }
-  }, [smoothProgress, dimensions, projects])
+  const isMobile = dimensions.width < BREAKPOINTS.md
 
   return (
     <section 
-      ref={containerRef} 
-      className="relative min-h-[100vh] bg-gradient-to-b from-gray-100 to-gray-300"
+    ref={containerRef} 
+    id="work-section"
+    className={`relative ${isMobile ? 'min-h-[200vh] py-32' : 'min-h-[120vh]'} ${backgroundStyles.section} overflow-hidden w-full`}
+  >
+      {/* Background */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: `
+            linear-gradient(to right, 
+              rgba(255,255,255,1) 0%, 
+              rgba(255,255,255,0) 20%, 
+              rgba(255,255,255,0) 80%, 
+              rgba(255,255,255,1) 100%
+            ),
+            linear-gradient(to bottom, 
+              rgba(255,255,255,1) 0%, 
+              rgba(255,255,255,0) 20%, 
+              rgba(255,255,255,0) 80%, 
+              rgba(255,255,255,1) 100%
+            ),
+            linear-gradient(to bottom, rgba(128,128,128,0.2) 1px, transparent 1px),
+            linear-gradient(to right, rgba(128,128,128,0.2) 1px, transparent 1px)
+          `,
+          backgroundSize: '100% 100%, 100% 100%, 40px 40px, 40px 40px',
+          mask: 'radial-gradient(circle at center, black 40%, transparent 100%)'
+        }}
+      />
+
+      {/* Title */}
+      <div className={`${isMobile ? 'relative mb-40' : 'absolute top-[10%]'} left-1/2 -translate-x-1/2 z-10 text-center`}>
+      <h2 className="text-5xl md:text-6xl font-bold text-gray-800">
+        Works
+      </h2>
+    </div>
+
+      {/* Projects */}
+      <motion.div
+      className={`${isMobile ? 'flex flex-col items-center justify-start z-20 space-y-8' : 'absolute inset-0 z-20 flex items-center justify-center'}`}
     >
-      <div className="sticky top-0 h-screen w-full">
-        <canvas 
-          ref={canvasRef}
-          className="absolute inset-0 max-w-full"
-          width={dimensions.width}
-          height={dimensions.height}
-        />
+        {projects.map(project => (
+          <ProjectCard 
+            key={project.id} 
+            project={project} 
+            smoothProgress={smoothProgress} 
+            isMobile={isMobile}
+          />
+        ))}
+      </motion.div>
+
+      {/* "and many more" */}
+      <div className={`${isMobile ? 'relative mt-10 mb-20 flex justify-center' : 'absolute inset-0 z-30 flex items-end justify-center pb-20'}`}>
+        <motion.h3 
+          className="text-xl md:text-2xl font-inter font-normal cursor-default tracking-tight"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.8 }}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            lineHeight: '1.3em'
+          }}
+        >
+          { "and many more".split('').map((char, index) => (
+            <motion.span
+              key={index}
+              variants={letterVariants}
+              style={{
+                display: 'inline-block',
+                margin: char === ' ' ? '0 4px' : '0',
+                opacity: 0.1
+              }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+                delay: index * 0.03
+              }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </motion.span>
+          ))}
+        </motion.h3>
       </div>
     </section>
   )

@@ -2,6 +2,7 @@
 
 import { ArrowUpRight } from 'lucide-react'
 import { motion, Variants } from 'framer-motion'
+import { backgroundStyles } from './background'
 
 const fadeInUpVariants: Variants = {
   initial: { opacity: 0, y: 30 },
@@ -17,19 +18,19 @@ const buttonVariants: Variants = {
 const HERO_CONTENT = {
   images: {
     dimensions: { 
-      width: { mobile: 60, tablet: 70, desktop: 80 },
-      height: { mobile: 60, tablet: 70, desktop: 80 }
+      width: { mobile: 80, tablet: 90, desktop: 100 },
+      height: { mobile: 80, tablet: 90, desktop: 100 }
     },
     secondImage: { 
-      width: { mobile: 90, tablet: 100, desktop: 120 },
-      height: { mobile: 90, tablet: 100, desktop: 120 }
+      width: { mobile: 110, tablet: 130, desktop: 150 },
+      height: { mobile: 110, tablet: 130, desktop: 150 }
     }
   },
   sections: [
     {
       text: "I'm Sagnik",
       image: {
-        src: "https://images.unsplash.com/photo-1734387981971-037a15511ef6",
+        src: "/standing.jpeg",
         alt: "Profile"
       }
     },
@@ -49,54 +50,54 @@ const HERO_CONTENT = {
 
 export function Hero() {
   return (
-    <section className="relative min-h-[80vh] bg-gradient-to-b from-gray-200 via-white to-gray-100 py-6 sm:py-8 md:py-12">
+    <section className={`relative min-h-[100vh] ${backgroundStyles.section} py-8 sm:py-12 md:py-16`}>
       <motion.div
         variants={fadeInUpVariants}
         initial="initial"
         animate="animate"
-        className="container mx-auto flex min-h-[80vh] flex-col items-center justify-center px-4 sm:px-6 lg:px-8 text-center"
+        className="container mx-auto flex min-h-[100vh] flex-col items-center justify-center px-6 sm:px-8 lg:px-12 text-center"
       >
-        <h1 className="mb-4 sm:mb-6 font-instrument-serif">
+        <h1 className="mb-6 sm:mb-8 font-instrument-serif">
           {HERO_CONTENT.sections.map((section, index) => (
-            <span key={index} className="mb-2 sm:mb-4 block text-3xl sm:text-5xl md:text-6xl lg:text-7xl">
+            <span key={index} className="mb-4 sm:mb-6 block text-4xl sm:text-6xl md:text-7xl lg:text-8xl">
               <span className="relative">
                 {index === 0 ? <em>{section.text}</em> : section.text}
-                <img
-                  src={section.image.src}
-                  alt={section.image.alt}
-                  width={
-                    index === 2
-                      ? HERO_CONTENT.images.secondImage.width.mobile
-                      : HERO_CONTENT.images.dimensions.width.mobile
-                  }
-                  height={
-                    index === 2
-                      ? HERO_CONTENT.images.secondImage.height.mobile
-                      : HERO_CONTENT.images.dimensions.height.mobile
-                  }
-                  className={`
-                    absolute 
-                    ${index === 0 
-                      ? 'left-full ml-2 sm:ml-4' 
-                      : '-right-16 sm:-right-24 lg:-right-32'
-                    } 
-                    top-1/2 -translate-y-1/2
-                    ${section.image.src ? 
-                      'rounded-md bg-white p-1 shadow-xl transition-transform hover:scale-110' : 
-                      'hidden'
+                {/* Only render image if src exists AND it's not the second section */}
+                {section.image.src && index !== 1 && (
+                  <img
+                    src={section.image.src}
+                    alt={section.image.alt}
+                    width={
+                      index === 2
+                        ? HERO_CONTENT.images.secondImage.width.mobile
+                        : HERO_CONTENT.images.dimensions.width.mobile
                     }
-                    object-cover
-                    ${index === 0 ? 'rotate-3 hover:rotate-0' : '-rotate-3 hover:rotate-0'}
-                    hidden sm:block
-                  `}
-                />
+                    height={
+                      index === 2
+                        ? HERO_CONTENT.images.secondImage.height.mobile
+                        : HERO_CONTENT.images.dimensions.height.mobile
+                    }
+                    className={`
+                      absolute 
+                      ${index === 0 
+                        ? 'left-full ml-2 sm:ml-4' 
+                        : '-right-16 sm:-right-24 lg:-right-32'
+                      } 
+                      top-1/2 -translate-y-1/2
+                      rounded-md bg-white p-1 shadow-xl transition-transform hover:scale-110
+                      object-cover
+                      ${index === 0 ? 'rotate-3 hover:rotate-0' : '-rotate-3 hover:rotate-0'}
+                      hidden sm:block
+                    `}
+                  />
+                )}
                 {index === 0 && ','}
               </span>
               {index === 1 && <em> Designer</em>}
             </span>
           ))}
         </h1>
-        <p className="mx-auto mb-6 sm:mb-8 max-w-2xl text-base sm:text-lg text-gray-700 px-4 sm:px-6">
+        <p className="mx-auto mb-8 sm:mb-10 max-w-3xl text-lg sm:text-xl text-gray-700 px-6 sm:px-8">
           I love cooking new experiences and pushing innovation.
         </p>
                
@@ -104,7 +105,7 @@ export function Hero() {
           variants={buttonVariants}
           whileHover="whileHover"
           whileTap="whileTap"
-          className="relative group w-36 sm:w-48 h-12 sm:h-14 flex items-center justify-center overflow-visible"
+          className="relative group w-44 sm:w-56 h-14 sm:h-16 flex items-center justify-center overflow-visible"
         >
           {/* Letter animation */}
           <motion.div
