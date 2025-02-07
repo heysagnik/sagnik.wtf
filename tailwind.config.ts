@@ -11,6 +11,9 @@ const config: Config = {
   	extend: {
 		fontFamily: {
 			'instrument-serif': ['"Instrument Serif"', 'serif'],
+			'playfair-display': ['"Playfair Display"', 'serif'],
+			'clash-display': ['"Clash Display"', 'serif'],
+			'futura-now-headline': ['"Futura Now"', 'sans-serif'],
       },
   		colors: { 
   			background: 'hsl(var(--background))',
@@ -64,7 +67,52 @@ const config: Config = {
 		},
 		backgroundSize: {
 		    'grid': '40px 40px',
-		}
+		},
+		transitionTimingFunction: {
+			'custom-ease': 'cubic-bezier(0.17, 0.55, 0.55, 1)',
+		},
+		animation: {
+			stacking: 'stacking 0.8s cubic-bezier(0.17, 0.55, 0.55, 1) forwards',
+			marquee: 'marquee 40s linear infinite',
+			marquee2: 'marquee2 40s linear infinite',
+			'marquee-reverse': 'marquee-reverse 40s linear infinite',
+			'marquee2-reverse': 'marquee2-reverse 40s linear infinite',
+			'marquee-slow': 'marquee 60s linear infinite',
+			'marquee-fast': 'marquee 20s linear infinite',
+			'marquee2-slow': 'marquee2 60s linear infinite',
+			'marquee2-fast': 'marquee2 20s linear infinite',
+		},
+		borderColor: {
+			border: 'hsl(var(--border))',
+		},
+		keyframes: {
+			stacking: {
+				'0%': { 
+					transform: 'translateY(100px)',
+					opacity: '0' 
+				},
+				'100%': { 
+					transform: 'translateY(0)',
+					opacity: '1' 
+				}
+			},
+			marquee: {
+				'0%': { transform: 'translateX(0%)' },
+				'100%': { transform: 'translateX(-100%)' },
+			},
+			marquee2: {
+				'0%': { transform: 'translateX(100%)' },
+				'100%': { transform: 'translateX(0%)' },
+			},
+			'marquee-reverse': {
+				'0%': { transform: 'translateX(-100%)' },
+				'100%': { transform: 'translateX(0%)' },
+			},
+			'marquee2-reverse': {
+				'0%': { transform: 'translateX(0%)' },
+				'100%': { transform: 'translateX(100%)' },
+			},
+		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

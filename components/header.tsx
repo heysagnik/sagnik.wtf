@@ -1,164 +1,213 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Twitter, Linkedin, Instagram } from 'lucide-react'
+import BentoGrid from './BentoGrid'
+import Image from 'next/image'
+const menuItems = [
+  { title: 'Home', href: '/' },
+  { title: 'Projects', href: '/projects' },
+  { title: 'Experiments', href: '/experiments' },
+  { title: 'About', href: '/about' },
+]
 
-const menuVariants = {
-  initial: {
-    opacity: 0,
-    y: -20,
-    transformOrigin: "100% 0%"
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.3,
-      ease: "easeOut"
-    }
-  },
-  exit: {
-    opacity: 0,
-    y: -20
-  }
-}
-
-const linkVariants = {
-  initial: { x: -20, opacity: 0 },
-  animate: (i: number) => ({
-    x: 0,
-    opacity: 1,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.3
-    }
-  })
-}
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : 'auto'
+    return () => { document.body.style.overflow = 'auto' }
+  }, [isOpen])
+
+  const MobileMenu = () => (
+    <motion.div
+      initial={{ y: '-100%', opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: '-100%', opacity: 0 }}
+      transition={{ duration: 0.6, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-white z-40 flex flex-col"
+    >
+      {/* Header section with gradient */}
+      <div className="h-24 bg-gradient-to-b from-gray-50 to-white" />
+
+      <div className="flex flex-col flex-1 p-8">
+        <nav className="space-y-8">
+          {menuItems.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.4, ease: 'easeInOut' }}
+            >
+              <Link 
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className="group relative flex items-center gap-4"
+              >
+                <motion.div
+                  className="absolute -left-6 w-4 h-0.5 bg-gray-900 origin-left scale-x-0 
+                    transition-transform duration-300 group-hover:scale-x-100"
+                />
+                <span className="text-2xl font-medium text-gray-900 
+                  transition-colors duration-200 group-hover:text-gray-600">
+                  {item.title}
+                </span>
+              </Link>
+            </motion.div>
+          ))}
+        </nav>
+
+        <div className="mt-auto">
+          <div className="border-t border-gray-100 pt-8">
+            <div className="flex gap-6 px-4">
+              <Link href="https://github.com" className="group">
+          <Image 
+            src='/github-mark.png' 
+            width={24} 
+            height={24} 
+            alt="GitHub" 
+            quality={100}
+            className="opacity-50 transition-opacity duration-200 group-hover:opacity-100"
+          />
+              </Link>
+              <Link href="https://linkedin.com" className="group">
+          <Image 
+            src='/linkedin.png' 
+            width={24} 
+            height={24} 
+            alt="LinkedIn" 
+            quality={100}
+            className="opacity-50 transition-opacity duration-200 group-hover:opacity-100"
+          />
+              </Link>
+              <Link href="https://twitter.com" className="group">
+          <Image 
+            src='/twitter.png' 
+            width={24} 
+            height={24} 
+            alt="Twitter" 
+            quality={100}
+            className="opacity-50 transition-opacity duration-200 group-hover:opacity-100"
+          />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-6 py-6">
-      <nav className="flex justify-between items-center max-w-7xl mx-auto">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ 
-            opacity: 1, 
-            y: 0,
-            transition: { duration: 0.6, ease: "easeOut" }
+    <>
+      <header className={`fixed w-full z-50 transition-all duration-300 ${
+        isScrolled ? 'py-2' : 'py-4'
+      }`}>
+        <motion.div 
+          className={`mx-auto px-4 max-w-6xl ${
+        isScrolled ? 'bg-white/70 backdrop-blur-lg shadow-md rounded-xl' : 'bg-white/30 backdrop-blur-sm'
+          }`}
+          initial={false}
+          animate={{
+        padding: isScrolled ? '0.5rem' : '0.75rem',
           }}
+          transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
-          <Link href="/" className="relative group">
+          <nav className="flex items-center justify-between">
+            <Link href="/">
             <motion.div
-              className="font-instrument-serif text-2xl px-10 py-4 rounded-full 
-            bg-gradient-to-r from-white to-white/90
-            shadow-[0_4px_20px_rgba(0,0,0,0.08)]
-            hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-            transition-all duration-500"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+          className="px-4 py-2.5 rounded-full 
+          transition-all duration-300 flex items-center gap-3"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
             >
-              <span className="bg-clip-text text-transparent bg-gradient-to-r 
-                from-gray-900 to-gray-600
-                relative z-10">
-          <em>Sagnik</em>
-              </span>
-              <motion.div
-          className="absolute inset-0 rounded-full opacity-0 
-              bg-gradient-to-r from-pink-100 to-violet-100"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 0.8 }}
-          transition={{ duration: 0.3 }}
-              />
+          {/* Avatar */}
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-100">
+          <img 
+            src="/relax.jpg" 
+            alt="Sagnik"
+            className="w-full h-full object-cover"
+          />
+          </div>
+            
+          {/* Name and Role */}
+          <div className="flex flex-col -space-y-0.5">
+          <span className="font-instrument-serif text-lg text-gray-900 leading-tight">
+            sagnik
+          </span>
+          <span className="text-xs text-gray-500 font-mono tracking-wide">
+            tinkerer
+          </span>
+          </div>
             </motion.div>
-          </Link>
-        </motion.div>
-
-        {/* Animated Menu Button */}
-        <motion.button
-          onClick={() => setIsOpen(!isOpen)}
-          className="relative w-12 h-12 rounded-full bg-white/50 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-            <motion.div
-            className="flex flex-col justify-center items-center w-full h-full"
-            animate={isOpen ? "open" : "closed"}
+            </Link>
+          
+            <motion.button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`relative z-50 w-10 h-10 rounded-full 
+            bg-white/70 backdrop-blur-sm border border-gray-100
+            hover:shadow-md transition-all duration-300`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             >
+            <div className="flex items-center justify-center w-full h-full">
             <motion.span
-              className="w-5 h-[1px] bg-black rounded-full absolute"
-              animate={{
+            className="absolute h-[1.5px] bg-gray-800 rounded-full"
+            animate={{
               rotate: isOpen ? 45 : 0,
-              translateY: isOpen ? 0 : -3
-              }}
-              transition={{ duration: 0.3 }}
+              width: 18,
+              translateY: isOpen ? 0 : -4
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             />
             <motion.span
-              className="w-5 h-[1px] bg-black rounded-full absolute"
-              animate={{
+            className="absolute h-[1.5px] bg-gray-800 rounded-full"
+            animate={{
               rotate: isOpen ? -45 : 0,
-              translateY: isOpen ? 0 : 3
-              }}
-              transition={{ duration: 0.3 }}
+              width: 18,
+              translateY: isOpen ? 0 : 4
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
             />
-            </motion.div>
-        </motion.button>
+            </div>
+            </motion.button>
+          </nav>
+        </motion.div>
+      </header>
 
-        {/* Navigation Menu */}
-        <AnimatePresence>
-          {isOpen && (
+      <AnimatePresence>
+        {isOpen && (
+          isMobile ? <MobileMenu /> : (
             <motion.div
-              variants={menuVariants}
-              initial="initial"
-              animate="animate" 
-              exit="exit"
-              className="fixed top-24 right-6 w-72 bg-white/90 backdrop-blur-md shadow-lg p-8 rounded-[24px_8px_24px_24px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+              className="fixed inset-0 bg-white z-40"
             >
-              <div className="flex flex-col space-y-6">
-                {['Work', 'About', 'Side Stuffs', 'Writings'].map((item, i) => (
-                  <motion.div
-                    key={item}
-                    custom={i}
-                    variants={linkVariants}
-                    initial="initial"
-                    animate="animate"
-                  >
-                    <Link
-                      href={`/${item.toLowerCase().replace(' ', '-')}`}
-                      onClick={() => setIsOpen(false)}
-                      className="block text-xl font-medium hover:text-gray-600 transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  </motion.div>
-                ))}
+              <div className="container mx-auto px-6 pt-32">
+                <BentoGrid  />
               </div>
-
-              <motion.div 
-                className="flex space-x-4 mt-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                {[Twitter, Linkedin, Instagram].map((Icon, i) => (
-                  <motion.a
-                    key={i}
-                    href="#"
-                    className="p-2 rounded-full border border-black/50 hover:bg-black hover:text-white transition-all"
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </motion.a>
-                ))}
-              </motion.div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
-    </header>
+          )
+        )}
+      </AnimatePresence>
+    </>
   )
 }

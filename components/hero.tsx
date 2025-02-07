@@ -1,8 +1,6 @@
 'use client'
 
-import { ArrowUpRight } from 'lucide-react'
 import { motion, Variants } from 'framer-motion'
-import { backgroundStyles } from './background'
 
 const fadeInUpVariants: Variants = {
   initial: { opacity: 0, y: 30 },
@@ -50,7 +48,7 @@ const HERO_CONTENT = {
 
 export function Hero() {
   return (
-    <section className={`relative min-h-[100vh] ${backgroundStyles.section} py-8 sm:py-12 md:py-16`}>
+    <section className="relative min-h-[90vh] py-4 sm:py-8">
       <motion.div
         variants={fadeInUpVariants}
         initial="initial"
