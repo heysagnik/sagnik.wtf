@@ -60,14 +60,14 @@ const Footer: React.FC = () => {
 
       <div className="relative mx-auto max-w-4xl text-center">
         <h2 className="mb-8 text-6xl font-bold">
-          Let's connect and craft
+          Let&apos;s connect and craft
           <br/>{' '}
           <span className="inline text-blue-500 text-600 italic font-playfair-display">experiences</span> together
         </h2>
         
         <p className="mb-12 text-xl text-gray-600 max-w-2xl mx-auto">
-          I'm passionate about user flows, research, and visuals—and I love
-          discussing ideas over a cup of chai. Drop me a message, and let's chat!
+          I&apos;m passionate about user flows, research, and visuals—and I love
+          discussing ideas over a cup of chai. Drop me a message, and let&apos;s chat!
         </p>
 
         <div>

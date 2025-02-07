@@ -1,8 +1,6 @@
 import FeaturedWork from '@/components/work'
 import { Header } from '@/components/header'
 import { Hero } from '@/components/hero'
-import { motion } from 'framer-motion'
-import InfiniteMarquee from '@/components/infinite-marquee'
 import Footer from '@/components/footer'
 
 export default function Page() {
