@@ -120,7 +120,7 @@ export function Header() {
         isScrolled ? 'py-2' : 'py-4'
       }`}>
         <motion.div 
-          className={`mx-auto px-4 max-w-6xl ${
+          className={`mx-4 sm:mx-auto px-4 max-w-6xl ${
         isScrolled ? 'bg-white/70 backdrop-blur-lg shadow-md rounded-xl' : 'bg-white/30 backdrop-blur-sm'
           }`}
           initial={false}
@@ -129,64 +129,66 @@ export function Header() {
           }}
           transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
-          <nav className="flex items-center justify-between">
-            <Link href="/">
-            <motion.div
-          className="px-4 py-2.5 rounded-full 
+          <nav className="flex items-center justify-between px-2">
+        <Link href="/">
+        <motion.div
+          className="px-2 sm:px-4 py-2.5 rounded-full 
           transition-all duration-300 flex items-center gap-3"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-            >
+        >
           {/* Avatar */}
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-100">
-          <img 
-            src="/relax.jpg" 
-            alt="Sagnik"
-            className="w-full h-full object-cover"
-          />
-          </div>
-            
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-100">
+            <Image 
+          src="/relax.jpg" 
+          width={40}
+          height={40}
+          alt="Sagnik"
+          className="w-full h-full object-cover"
+            />
+            </div>
+        
           {/* Name and Role */}
           <div className="flex flex-col -space-y-0.5">
           <span className="font-instrument-serif text-lg text-gray-900 leading-tight">
-            sagnik
+        sagnik
           </span>
           <span className="text-xs text-gray-500 font-mono tracking-wide">
-            tinkerer
+        tinkerer
           </span>
           </div>
-            </motion.div>
-            </Link>
+        </motion.div>
+        </Link>
           
-            <motion.button
-            onClick={() => setIsOpen(!isOpen)}
-            className={`relative z-50 w-10 h-10 rounded-full 
-            bg-white/70 backdrop-blur-sm border border-gray-100
-            hover:shadow-md transition-all duration-300`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            >
-            <div className="flex items-center justify-center w-full h-full">
-            <motion.span
-            className="absolute h-[1.5px] bg-gray-800 rounded-full"
-            animate={{
-              rotate: isOpen ? 45 : 0,
-              width: 18,
-              translateY: isOpen ? 0 : -4
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            />
-            <motion.span
-            className="absolute h-[1.5px] bg-gray-800 rounded-full"
-            animate={{
-              rotate: isOpen ? -45 : 0,
-              width: 18,
-              translateY: isOpen ? 0 : 4
-            }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            />
-            </div>
-            </motion.button>
+        <motion.button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`relative z-50 w-10 h-10 rounded-full 
+        bg-white/70 backdrop-blur-sm border border-gray-100
+        hover:shadow-md transition-all duration-300`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        >
+        <div className="flex items-center justify-center w-full h-full">
+        <motion.span
+        className="absolute h-[1.5px] bg-gray-800 rounded-full"
+        animate={{
+          rotate: isOpen ? 45 : 0,
+          width: 18,
+          translateY: isOpen ? 0 : -4
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        />
+        <motion.span
+        className="absolute h-[1.5px] bg-gray-800 rounded-full"
+        animate={{
+          rotate: isOpen ? -45 : 0,
+          width: 18,
+          translateY: isOpen ? 0 : 4
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        />
+        </div>
+        </motion.button>
           </nav>
         </motion.div>
       </header>

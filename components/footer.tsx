@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface SocialLinkProps {
   href: string;
@@ -23,10 +24,12 @@ const SocialLink: React.FC<SocialLinkProps & { username?: string }> = ({
   >
     <div className="relative">
       <div className="relative p-4 bg-white rounded-lg" style={{ minWidth: '180px' }}>
-        <img 
+        <Image
           src="/tape.png" 
           alt="Tape" 
-          className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20"
+          width={30}
+          height={30}
+          className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20"
           style={{ pointerEvents: 'none' }}
         />
         <div className="absolute inset-0 bg-white/50 backdrop-blur-sm" />
@@ -93,9 +96,12 @@ const Footer: React.FC = () => {
             />
             
             <div className="relative">
-              <img 
+              <Image 
                 src="/click.png" 
                 alt="Instagram" 
+                height={51}
+                width={86}
+
                 className="absolute -top-6 -right-4 w-[86px] h-[51px] z-30"
               />
               <SocialLink

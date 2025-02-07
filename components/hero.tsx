@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, Variants } from 'framer-motion'
+import Image from 'next/image'
 
 const fadeInUpVariants: Variants = {
   initial: { opacity: 0, y: 30 },
@@ -39,7 +40,7 @@ const HERO_CONTENT = {
     {
       text: "based in India",
       image: {
-        src: "https://plus.unsplash.com/premium_photo-1661919589683-f11880119fb7",
+        src: "https://images.unsplash.com/photo-1587474260584-136574528ed5",
         alt: "India"
       }
     }
@@ -57,14 +58,17 @@ export function Hero() {
       >
         <h1 className="mb-6 sm:mb-8 font-instrument-serif">
           {HERO_CONTENT.sections.map((section, index) => (
-            <span key={index} className="mb-4 sm:mb-6 block text-4xl sm:text-6xl md:text-7xl lg:text-8xl">
+            <span key={index} className="mb-4 sm:mb-6 block text-5xl sm:text-6xl md:text-7xl lg:text-8xl">
               <span className="relative">
                 {index === 0 ? <em>{section.text}</em> : section.text}
                 {/* Only render image if src exists AND it's not the second section */}
                 {section.image.src && index !== 1 && (
-                  <img
+                  <Image
                     src={section.image.src}
                     alt={section.image.alt}
+                    priority
+                    quality={95}
+                    sizes="(max-width: 768px) 100px, 150px"
                     width={
                       index === 2
                         ? HERO_CONTENT.images.secondImage.width.mobile
