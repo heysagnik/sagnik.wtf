@@ -18,7 +18,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.13.1",
     "lodash": "^4.17.21",
-    "next": "15.0.3",
+    "next": "15.2.3",
     "next-view-transitions": "^0.3.4",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
