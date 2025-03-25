@@ -411,17 +411,7 @@ export default function SpotifyWidget({
         animate={{ opacity: 1, y: 0 }}
         className="bg-[#1A1A1A] rounded-3xl overflow-hidden shadow-lg border border-white/10 p-2 sm:p-3"
       >
-        {/* Loading overlay */}
-        {isLoading && !isReady && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-xl"
-          >
-            <div className="w-8 h-8 border-2 border-[#1DB954] border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p className="text-white text-xs font-medium">Loading track...</p>
-          </motion.div>
-        )}
+        {/* Remove the full-screen loading overlay */}
         
         <div className="flex items-center gap-2 sm:gap-0">
           <div className="relative w-12 h-12 sm:w-16 sm:h-16 mr-2 sm:mr-4 rounded-md overflow-hidden shadow-md">
@@ -436,6 +426,12 @@ export default function SpotifyWidget({
             {error && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <span className="text-[8px] sm:text-[10px] text-white/90 px-1 py-0.5 bg-black/50 rounded">{error}</span>
+              </div>
+            )}
+            
+            {isLoading && !isReady && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-[#1DB954] border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>

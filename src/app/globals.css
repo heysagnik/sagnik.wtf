@@ -125,14 +125,14 @@
   }
 }
 
-/* Add this to your global CSS */
+
 @layer utilities {
   .bg-gradient-radial {
     background-image: radial-gradient(var(--tw-gradient-stops));
   }
 }
 
-/* Add this to your global CSS file */
+
 .apple-maps-popup .leaflet-popup-content-wrapper {
   border-radius: 12px;
   padding: 4px;
@@ -152,4 +152,17 @@
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite linear;
 }
