@@ -8,7 +8,6 @@ import TypingIndicator from "./typing-indicator"
 import type { MessageType } from "@/lib/types"
 import { generateInitialMessages } from "@/lib/data"
 
-// Component definitions with displayName already set (unchanged)
 const ScrollToBottomButton = memo(({ onClick }: { onClick: () => void }) => (
   <motion.button
     onClick={onClick}

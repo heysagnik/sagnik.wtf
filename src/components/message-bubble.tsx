@@ -11,8 +11,22 @@ interface MessageBubbleProps {
   showAvatar?: boolean
 }
 
+// Add shimmer effect component
+const ShimmerEffect = () => (
+  <div className="absolute inset-0 w-full h-full">
+    <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
+         style={{
+           backgroundSize: '200% 100%',
+           animation: 'shimmer 1.5s infinite'
+         }}
+    />
+  </div>
+);
+
 export default function MessageBubble({ message, showAvatar }: MessageBubbleProps) {
   const [, setIsVisible] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [videoLoaded, setVideoLoaded] = useState(false)
   const isUser = message.sender === "user"
 
   useEffect(() => {
@@ -115,22 +129,31 @@ export default function MessageBubble({ message, showAvatar }: MessageBubbleProp
                 )}
                 <div className="overflow-hidden rounded-lg">
                   <div className="flex flex-col">
-                    <div className="relative h-[112px]">
+                    <div className="relative h-[112px] bg-gray-800/40">
+                      {/* Loading skeleton with shimmer effect */}
+                      {!imageLoaded && !videoLoaded && (
+                        <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-t-lg">
+                          <ShimmerEffect />
+                        </div>
+                      )}
+                      
                       {message.project.image?.endsWith('.mp4') || message.project.image?.endsWith('.webm') ? (
                         <video
                           src={message.project.image || "/placeholder.svg"}
                           title={message.project.title}
-                          className="object-cover w-full h-full"
+                          className={`object-cover w-full h-full transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
                           autoPlay
                           muted
                           loop
+                          onLoadedData={() => setVideoLoaded(true)}
                         />
                       ) : (
                         <Image
                           src={message.project.image || "/placeholder.svg"}
                           alt={message.project.title}
                           fill
-                          className="object-cover"
+                          className={`object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                          onLoad={() => setImageLoaded(true)}
                         />
                       )}
                     </div>
@@ -195,17 +218,6 @@ export default function MessageBubble({ message, showAvatar }: MessageBubbleProp
             ) : (
               <p className="text-[14px] leading-snug whitespace-pre-line">{message.content}</p>
             )}
-
-            {/* {message.link && message.type !== "cta" && (
-              <Link 
-                href={message.link} 
-                className={`${isUser 
-                  ? 'text-white/90 hover:text-white underline' 
-                  : 'text-[#0a84ff] hover:text-[#0071e3] underline'} block mt-1 text-[12px] font-medium`}
-              >
-                {message.linkText || message.link}
-              </Link>
-            )} */}
 
             {message.timestamp && (
               <div className={`${isUser ? 'text-white/40 text-right' : 'text-white/40'} text-[9px] mt-1 select-none`}>
