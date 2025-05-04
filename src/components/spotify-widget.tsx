@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef, memo } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 
-// Track interface for Spotify embed
 export interface Track {
   id: string
   title: string
@@ -24,7 +23,6 @@ interface SpotifyWidgetProps {
   initialTrack?: number
 }
 
-// Custom hook for audio playback
 function useAudioPlayer(
   track: Track | undefined, 
   tracks: Track[], 
@@ -34,23 +32,19 @@ function useAudioPlayer(
   autoplay?: boolean
 ) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [isReady, setIsReady] = useState(false); // New state for track readiness
+  const [isReady, setIsReady] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<number | null>(null);
   
-  // Initialize autoplay on mount if enabled
   useEffect(() => {
     if (autoplay && track?.audioPreviewUrl && !isPlaying && isReady) {
-      // Small delay to allow audio to initialize
       const timer = setTimeout(() => {
         if (audioRef.current) {
-          audioRef.current.play().catch(err => {
-            console.error("Autoplay error:", err);
-          });
+          audioRef.current.play().catch(() => {});
         }
       }, 100);
       
@@ -58,9 +52,8 @@ function useAudioPlayer(
     }
   }, [autoplay, track, isPlaying, isReady]);
 
-  // Reinitialize audio on any track change
   useEffect(() => {
-    if (!track || !track.audioPreviewUrl || typeof window === 'undefined') {
+    if (!track?.audioPreviewUrl || typeof window === 'undefined') {
       return () => {};
     }
     
@@ -72,12 +65,10 @@ function useAudioPlayer(
       ? track.audioPreviewUrl
       : `${window.location.origin}${track.audioPreviewUrl}`;
     
-    console.log(`Loading audio from: ${audioUrl}`);
-    
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    // Always create a new Audio instance on track change
+    
     audioRef.current = new Audio(audioUrl);
     const audio = audioRef.current;
     
@@ -96,8 +87,7 @@ function useAudioPlayer(
       setIsReady(true);
     };
     
-    const handleError = (e: Event) => {
-      console.error("Audio error:", e);
+    const handleError = () => {
       setIsLoading(false);
       setIsPlaying(false);
       setError("Unable to play audio");
@@ -116,38 +106,35 @@ function useAudioPlayer(
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("error", handleError);
       if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+        window.clearInterval(progressIntervalRef.current);
       }
     };
   }, [track, currentTrackIndex, onPlaybackError, setCurrentTrackIndex, tracks.length]);
   
-  // Auto-start playback on track change if already playing
   useEffect(() => {
     if (isPlaying && audioRef.current && isReady) {
-      audioRef.current.play().catch(err => {
-        console.error("Auto play error:", err);
+      audioRef.current.play().catch(() => {
         setIsPlaying(false);
       });
     }
   }, [track, isPlaying, isReady]);
   
-  // Update progress during playback
   useEffect(() => {
     if (!audioRef.current) return;
     
     if (isPlaying) {
-      progressIntervalRef.current = setInterval(() => {
+      progressIntervalRef.current = window.setInterval(() => {
         if (audioRef.current && audioRef.current.duration) {
           setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
         }
       }, 100);
     } else if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
+      window.clearInterval(progressIntervalRef.current);
     }
     
     return () => {
       if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
+        window.clearInterval(progressIntervalRef.current);
       }
     };
   }, [isPlaying]);
@@ -165,28 +152,25 @@ function useAudioPlayer(
       setIsPlaying(false);
     } else {
       setIsLoading(true);
-      audioRef.current
-        .play()
+      audioRef.current.play()
         .then(() => {
           setIsPlaying(true);
           setIsLoading(false);
         })
         .catch(err => {
-          console.error("Playback error:", err);
           setIsLoading(false);
           if (err.name === "NotAllowedError") {
             setError("Browser blocked autoplay");
           } else if (err.name === "NotSupportedError") {
             setError("Audio format not supported");
           } else {
-            setError(`Playback failed: ${err.message}`);
+            setError("Playback failed");
           }
         });
     }
   }, [isPlaying, track]);
   
   const handleNextTrack = useCallback(() => {
-    // Move to next track if available. If at end, you could wrap around if desired.
     if (currentTrackIndex < tracks.length - 1) {
       setCurrentTrackIndex(prev => prev + 1);
       setProgress(0);
@@ -194,13 +178,11 @@ function useAudioPlayer(
   }, [currentTrackIndex, tracks.length, setCurrentTrackIndex]);
   
   const handlePrevTrack = useCallback(() => {
-    // If current track has played more than 3 seconds, reset its time.
     if (audioRef.current && audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
       setProgress(0);
       return;
     }
-    // Otherwise, go to the previous track if available.
     if (currentTrackIndex > 0) {
       setCurrentTrackIndex(prev => prev - 1);
       setProgress(0);
@@ -219,6 +201,7 @@ function useAudioPlayer(
   }, [track]);
   
   const formatTime = useCallback((seconds: number) => {
+    if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
@@ -243,7 +226,6 @@ function useAudioPlayer(
   };
 }
 
-// Update TrackInfo component with responsive styles
 const TrackInfo = memo(({ 
   title, 
   artist, 
@@ -259,20 +241,18 @@ const TrackInfo = memo(({
     <button 
       className="mt-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-[#1DB954]/90 hover:bg-[#1DB954] text-black/90 hover:text-black transition-all transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[#1DB954]/50 flex items-center gap-0.5 sm:gap-1"
       onClick={onAddToPlaylist}
+      aria-label={`Open ${title} by ${artist} in Spotify`}
     >
-      
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm31.07,145.74a8,8,0,0,1-10.81,3.33,42.79,42.79,0,0,0-40.52,0,8,8,0,0,1-7.48-14.14,59.33,59.33,0,0,1,55.48,0A8,8,0,0,1,159.07,169.74Zm16-28a8,8,0,0,1-10.82,3.3,77.07,77.07,0,0,0-72.48,0,8,8,0,0,1-7.52-14.12,93,93,0,0,1,87.52,0A8,8,0,0,1,175.06,141.76Zm16-28a8,8,0,0,1-10.83,3.29,110.62,110.62,0,0,0-104.46,0,8,8,0,0,1-7.54-14.12,126.67,126.67,0,0,1,119.54,0A8,8,0,0,1,191.06,113.76Z"></path>
-     </svg>
+        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm31.07,145.74a8,8,0,0,1-10.81,3.33,42.79,42.79,0,0,0-40.52,0,8,8,0,0,1-7.48-14.14,59.33,59.33,0,0,1,55.48,0A8,8,0,0,1,159.07,169.74Zm16-28a8,8,0,0,1-10.82,3.3,77.07,77.07,0,0,0-72.48,0,8,8,0,0,1-7.52-14.12,93,93,0,0,1,87.52,0A8,8,0,0,1,175.06,141.76Zm16-28a8,8,0,0,1-10.83,3.29,110.62,110.62,0,0,0-104.46,0,8,8,0,0,1-7.54-14.12,126.67,126.67,0,0,1,119.54,0A8,8,0,0,1,191.06,113.76Z"></path>
+      </svg>
       Add
-      
     </button>
   </div>
 ));
 
 TrackInfo.displayName = "TrackInfo";
 
-// Update Controls with responsive sizes
 const Controls = memo(
   ({
     onPrev,
@@ -298,6 +278,7 @@ const Controls = memo(
         onClick={onPrev}
         disabled={isPrevDisabled}
         className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-white/70 hover:text-white disabled:text-white/30"
+        aria-label="Previous track"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -315,15 +296,14 @@ const Controls = memo(
         onClick={onPlay}
         disabled={!isReady && isLoading}
         className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white text-black hover:bg-white/90 transition-colors"
-        title={isPlaying ? "Pause" : "Play"}
+        aria-label={isPlaying ? "Pause" : "Play"}
       >
         {isLoading ? (
           <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-t-transparent border-black rounded-full animate-spin"></div>
         ) : isPlaying ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="#000000" className="sm:w-6 sm:h-6">
-                <path d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z"></path>
-            </svg>
-          
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 256 256" fill="#000000" className="sm:w-6 sm:h-6">
+            <path d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z"></path>
+          </svg>
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -342,6 +322,7 @@ const Controls = memo(
         onClick={onNext}
         disabled={isNextDisabled}
         className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-white/70 hover:text-white disabled:text-white/30"
+        aria-label="Next track"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -398,7 +379,7 @@ export default function SpotifyWidget({
   const openInSpotify = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (track?.spotifyUrl) {
-      window.open(track.spotifyUrl, "_blank");
+      window.open(track.spotifyUrl, "_blank", "noopener,noreferrer");
     }
   }, [track]);
   
@@ -411,8 +392,6 @@ export default function SpotifyWidget({
         animate={{ opacity: 1, y: 0 }}
         className="bg-[#1A1A1A] rounded-3xl overflow-hidden shadow-lg border border-white/10 p-2 sm:p-3"
       >
-        {/* Remove the full-screen loading overlay */}
-        
         <div className="flex items-center gap-2 sm:gap-0">
           <div className="relative w-12 h-12 sm:w-16 sm:h-16 mr-2 sm:mr-4 rounded-md overflow-hidden shadow-md">
             <Image
@@ -455,8 +434,16 @@ export default function SpotifyWidget({
         </div>
         
         <div className="mt-3 sm:mt-4">
-          <div className="h-1 bg-white/10 rounded-full cursor-pointer" onClick={handleProgressClick}>
-            <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }} />
+          <div 
+            className="h-1 bg-white/10 rounded-full cursor-pointer relative" 
+            onClick={handleProgressClick}
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Track progress: ${Math.round(progress)}%`}
+          >
+            <div className="h-full bg-[#1DB954] rounded-full" style={{ width: `${progress}%` }} />
           </div>
           
           <div className="flex justify-between mt-0.5 sm:mt-1">
@@ -469,9 +456,6 @@ export default function SpotifyWidget({
   );
 }
 
-
-
-// Multiple tracks demo
 export function SpotifyPlaylist() {
   const tracks: Track[] = [
     {
@@ -503,9 +487,5 @@ export function SpotifyPlaylist() {
     }
   ];
   
-  return (
-    <div className="space-y-4">
-      <SpotifyWidget tracks={tracks} />
-    </div>
-  );
+  return <SpotifyWidget tracks={tracks} />;
 }

@@ -1,35 +1,59 @@
-import Image from 'next/image';
+import { memo } from 'react';
 
-export default function TypingIndicator() {
+interface TypingIndicatorProps {
+  showAvatar?: boolean;
+}
+
+const TypingIndicator = memo(({ }: TypingIndicatorProps) => {
   return (
-    <div className="flex items-start gap-2 sm:gap-3">
-       <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
-                <Image
-                  src="/globe.svg"
-                  alt="Avatar"
-                  width={24}
-                  height={24}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-      <div className="bg-[#1c1c1e] px-4 py-2.5 rounded-2xl inline-flex items-center shadow-lg border border-gray-800">
-        {/* <span className="text-gray-400 text-sm mr-2">typing</span> */}
+    <div className="flex items-end pl-2">
+      <div 
+        className="bg-[#262628] px-3 py-2 rounded-full inline-flex items-center"
+        role="status"
+        aria-label="Someone is typing"
+      >
         <div className="flex space-x-1">
-          <div 
-            className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" 
-            style={{animationDuration: '0.6s', animationDelay: '0ms'}}
-          ></div>
-          <div 
-            className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" 
-            style={{animationDuration: '0.6s', animationDelay: '0.2s'}}
-          ></div>
-          <div 
-            className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" 
-            style={{animationDuration: '0.6s', animationDelay: '0.4s'}}
-          ></div>
+          <div className="typing-dot"></div>
+          <div className="typing-dot"></div>
+          <div className="typing-dot"></div>
         </div>
       </div>
+
+      <style jsx>{`
+        .typing-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background-color: #8e8e93;
+          opacity: 0.8;
+          animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+          animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+        
+        @keyframes typingAnimation {
+          0%, 60%, 100% {
+            transform: translateY(0);
+          }
+          30% {
+            transform: translateY(-4px);
+          }
+        }
+      `}</style>
     </div>
-  )
-}
+  );
+});
+
+TypingIndicator.displayName = 'TypingIndicator';
+
+export default TypingIndicator;

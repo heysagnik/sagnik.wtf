@@ -1,6 +1,14 @@
 "use client"
+
 import { useState, useEffect, useCallback } from "react"
-import MessagingApp from "@/components/messaging-app"
+import { AnimatePresence, motion } from "framer-motion";
+import { useMessages } from "@/hooks/useMessages";
+import { useScrollBehavior } from "@/hooks/useScrollBehavior";
+import MessageList from "@/components/message-list";
+import { MessageInput } from "@/components/message-input";
+import CompactHeader from "@/components/compact-header";
+import NewMessagesNotification from "@/components/new-messages-notification";
+import TypingIndicator from "@/components/typing-indicator";
 
 // Animation timing constants (in ms)
 const ANIMATION = {
@@ -92,6 +100,121 @@ function BootScreen() {
   )
 }
 
+function MessagingApp() {
+  const { messages, isTyping, addMessage, loadMoreMessages, setAllMessages } = useMessages();
+  const { 
+    containerRef, 
+    isScrolledUp, 
+    isHeaderScrolled, 
+    scrollToBottom, 
+    autoScrollOnNewContent 
+  } = useScrollBehavior();
+  
+  const [isTimestampVisible, setIsTimestampVisible] = useState(false);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  
+  const handleTimestampVisibilityChange = useCallback((isVisible: boolean) => {
+    setTimeout(() => {
+      setIsTimestampVisible(isVisible);
+    }, isVisible ? 0 : 100);
+  }, []);
+  
+  const showCompactHeader = isHeaderScrolled && !isTimestampVisible;
+  
+  const handleRefresh = useCallback(() => {
+    const newMessages = loadMoreMessages(3);
+    setAllMessages(prevMessages => [...newMessages, ...prevMessages]);
+    return Promise.resolve();
+  }, [loadMoreMessages, setAllMessages]);
+  
+  const handleScrollToBottom = useCallback(() => {
+    scrollToBottom();
+    setNewMessageCount(0);
+  }, [scrollToBottom]);
+  
+  useEffect(() => {
+    if (isScrolledUp && messages.length > 0) {
+      const prevMessageCount = newMessageCount;
+      if (prevMessageCount < messages.length) {
+        setNewMessageCount(prevMessageCount + 1);
+      }
+    }
+  }, [isScrolledUp, messages.length]);
+  
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    
+ 
+  },  [containerRef]);
+
+  useEffect(() => {
+    autoScrollOnNewContent();
+  }, [messages, isTyping, autoScrollOnNewContent]);
+
+  const handleSendMessage = useCallback((content: string) => {
+    addMessage(content);
+    setTimeout(scrollToBottom, 100);
+    setNewMessageCount(0);
+  }, [addMessage, scrollToBottom]);
+
+  return (
+    <div className="w-full h-full flex flex-col bg-black overflow-hidden">
+      <div className="h-safe-area-top bg-black flex-shrink-0"></div>
+      
+      <div className="absolute top-0 left-0 right-0 h-16 sm:h-20 z-10 pointer-events-none">
+        <div className="w-full h-full bg-gradient-to-b from-black via-black/80 to-transparent"></div>
+      </div>
+      
+      <CompactHeader isVisible={showCompactHeader} />
+      
+      <AnimatePresence>
+        {isScrolledUp && newMessageCount > 0 && showCompactHeader && (
+          <NewMessagesNotification 
+            count={newMessageCount} 
+            onClick={handleScrollToBottom} 
+          />
+        )}
+      </AnimatePresence>
+      
+      <div 
+        ref={containerRef} 
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col scrollbar-hide px-3"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <MessageList 
+          messages={messages} 
+          onTimestampVisibilityChange={handleTimestampVisibilityChange}
+        />
+        <div className="h-4"></div>
+      </div>
+      
+      {/* Typing indicator positioned just above the input bar */}
+      <AnimatePresence>
+        {isTyping && (
+          <motion.div
+            className="px-3 pt-1 pb-1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            transition={{ duration: 0.2 }}
+          >
+            <TypingIndicator showAvatar/>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <div className="bg-black/95 backdrop-blur-sm w-full flex-shrink-0 border-t border-white/5">
+        <div className="absolute top-[-1px] inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+        <MessageInput onSend={handleSendMessage} isEnabled />
+      </div>
+      
+      <div className="h-safe-area-bottom bg-black w-full flex-shrink-0"></div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true)
   const [fadeOut, setFadeOut] = useState(false)
@@ -99,11 +222,9 @@ export default function Home() {
   useEffect(() => {
     const bootTimer = setTimeout(() => {
       setFadeOut(true)
-      
       const transitionTimer = setTimeout(() => {
         setLoading(false)
       }, ANIMATION.FINAL_TRANSITION)
-      
       return () => clearTimeout(transitionTimer)
     }, ANIMATION.BOOT_SCREEN_DURATION)
 
@@ -111,14 +232,54 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="h-full w-full overflow-hidden">
-      {loading ? (
-        <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-          <BootScreen />
-        </div>
-      ) : (
+    <main className="h-full w-full flex justify-center bg-black overflow-hidden">
+      <div className="w-full max-w-[500px] h-full">
+        {/* {loading ? (
+          <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+            <BootScreen />
+          </div>
+        ) : (
+          <MessagingApp />
+        )} */}
         <MessagingApp />
-      )}
+      </div>
+      
+      <style jsx global>{`
+        body {
+          background-color: black;
+          overflow: hidden;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 4px 6px rgba(0, 0, 0, 0.1); }
+          50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 4px 6px rgba(0, 0, 0, 0.1); }
+          100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 4px 6px rgba(0, 0, 0, 0.1); }
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        
+        :root {
+          --sat: env(safe-area-inset-top, 0px);
+          --sab: env(safe-area-inset-bottom, 0px);
+          --sal: env(safe-area-inset-left, 0px);
+          --sar: env(safe-area-inset-right, 0px);
+        }
+        
+        .h-safe-area-top {
+          height: var(--sat);
+        }
+        
+        .h-safe-area-bottom {
+          height: var(--sab);
+        }
+      `}</style>
     </main>
   )
 }

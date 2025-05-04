@@ -146,7 +146,7 @@ export default function RootLayout({
               "@type": "Person",
               name: "Sagnik Sahoo",
               url: DOMAIN,
-              // ...additional schema properties
+             
             }),
           }}
         />

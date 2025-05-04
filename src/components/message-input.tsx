@@ -1,113 +1,170 @@
-import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion";
+import { memo, useEffect, useRef, useState } from "react";
 
 interface MessageInputProps {
-  onSend: (text: string) => void
-  isEnabled: boolean
+  onSend?: (content: string) => void;
+  isEnabled?: boolean;
+  placeholder?: string;
 }
 
-export default function MessageInput({ onSend, isEnabled }: MessageInputProps) {
-  const [inputValue, setInputValue] = useState("")
-  const [isFocused, setIsFocused] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  // Auto-resize textarea
+export const MessageInput = memo(({ 
+  onSend, 
+  isEnabled = true, 
+  placeholder = "Say Hi ..." 
+}: MessageInputProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Automatically adjust textarea height based on content
+  const adjustHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    textarea.style.height = "30px";
+    const scrollHeight = textarea.scrollHeight;
+    textarea.style.height = Math.min(120, Math.max(36, scrollHeight)) + "px";
+  };
+  
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "36px"
-      const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = scrollHeight + "px"
-    }
-  }, [inputValue])
+    adjustHeight();
+  }, [inputValue]);
 
   const handleSend = () => {
-    if (inputValue.trim() && isEnabled) {
-      onSend(inputValue.trim())
-      setInputValue("")
+    if (inputValue.trim() && onSend && isEnabled) {
+      onSend(inputValue.trim());
+      setInputValue("");
+      
+      // Reset focus to textarea after sending
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 10);
     }
-  }
-
+  };
+  
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && isEnabled) {
-      e.preventDefault()
-      handleSend()
+    if (e.key === 'Enter' && !e.shiftKey && isEnabled) {
+      e.preventDefault();
+      handleSend();
     }
-  }
-
+  };
+  
   return (
-    <div className="px-4 py-3 bg-[#1A1A1C] border-t border-gray-800"><motion.div
-      className="flex items-end gap-2 relative"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <div className={`flex-grow flex items-center bg-[#1C1C1E] rounded-3xl px-1 
-          ${isFocused ? 'ring-1 ring-blue-500' : ''}`}>
-
-        <textarea
-          ref={textareaRef}
-          className={`flex-grow bg-transparent text-white/90 px-3 py-2 outline-none text-sm resize-none
-              ${!isEnabled ? 'opacity-50' : ''}`}
-          placeholder="iMessage"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+    <div className="px-3 py-2">
+      <div className="flex items-center gap-2">
+        {/* Camera button */}
+        {/* <motion.button 
+          className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70"
+          whileTap={{ scale: 0.92 }}
+          aria-label="Take photo"
           disabled={!isEnabled}
-          style={{ minHeight: "36px", maxHeight: "120px" }} />
-
-        <AnimatePresence>
-          {(inputValue.trim()) && (
-            <motion.button
-              onClick={handleSend}
-              disabled={!isEnabled || !inputValue.trim()}
-              className="pr-3 pl-1 py-2"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className={`rounded-full p-1.5 ${isEnabled && inputValue.trim() ? 'bg-[#0084FF]' : 'bg-gray-600'}`}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-white"
-                >
-                  <path d="m5 12 l14 0" />
-                  <path d="m12 5 l7 7 l-7 7" />
-                </svg>
-              </div>
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {!inputValue.trim() && (
-        <motion.button
-          className="text-[#0084FF] px-2"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <line x1="9" y1="9" x2="9.01" y2="9" />
-            <line x1="15" y1="9" x2="15.01" y2="9" />
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="text-white/80"
+          >
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+            <circle cx="12" cy="13" r="3"></circle>
+          </svg>
+        </motion.button> */}
+
+        {/* App Store button */}
+        <motion.button 
+          className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70"
+          whileTap={{ scale: 0.92 }}
+          aria-label="App Store"
+          disabled={!isEnabled}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="22" 
+            height="22" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="text-white/80"
+          >
+            <line x1="4" y1="9" x2="20" y2="9"></line>
+            <line x1="4" y1="15" x2="20" y2="15"></line>
+            <line x1="10" y1="3" x2="8" y2="21"></line>
+            <line x1="16" y1="3" x2="14" y2="21"></line>
           </svg>
         </motion.button>
-      )}
+        
+        <motion.div 
+          className={`flex-grow flex items-center bg-white/10 rounded-full transition-all h-9 px-4
+                     ${isFocused ? 'ring-1 ring-white/10' : ''}`}
+          animate={{
+            backgroundColor: isFocused && isEnabled 
+              ? "rgba(255, 255, 255, 0.12)" 
+              : "rgba(255, 255, 255, 0.1)",
+          }}
+          initial={false}
+          transition={{ duration: 0.2 }}
+        >
+          <input 
+            ref={textareaRef as any}
+            className="bg-transparent text-white w-full resize-none outline-none text-sm placeholder:text-white/40"
+            placeholder={placeholder}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={handleKeyDown as any}
+            disabled={!isEnabled}
+          />
+        </motion.div>
+        
+        {/* Send button */}
+        <motion.button 
+          onClick={handleSend}
+          className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full ${
+            inputValue.trim() && isEnabled 
+              ? "bg-blue-500 text-white" 
+              : "bg-white/10 text-white/40"
+          }`}
+          whileTap={isEnabled && inputValue.trim() ? { scale: 0.95 } : {}}
+          initial={false}
+          animate={{ 
+            opacity: isEnabled ? 1 : 0.7,
+            transition: { duration: 0.2 }
+          }}
+          aria-label="Send message"
+          disabled={!isEnabled || !inputValue.trim()}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="18" 
+            height="18" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="m12 19V5"></path>
+            <path d="m5 12 7-7 7 7"></path>
+          </svg>
+        </motion.button>
+      </div>
+      
+      <div className="h-0.5 w-32 bg-gradient-to-r from-transparent via-white/5 to-transparent mx-auto mt-2.5 rounded-full"></div>
+    </div>
+  );
+});
 
-    </motion.div>
-  </div>
-    
-  
-  )
-}
+MessageInput.displayName = 'MessageInput';

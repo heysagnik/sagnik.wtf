@@ -1,236 +1,311 @@
-import type { MessageType } from "@/lib/types"
+import { useState, useEffect, memo, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import MapWidget from "./map-widget"
-import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import type { MessageType } from "@/lib/types"
+import MapWidget from "./map-widget"
 import { SpotifyPlaylist } from "./spotify-widget"
 
 interface MessageBubbleProps {
   message: MessageType
-  showAvatar?: boolean
+  showAvatar?: boolean  // We'll keep this prop for backward compatibility
 }
 
-// Add shimmer effect component
-const ShimmerEffect = () => (
+const ShimmerEffect = memo(() => (
   <div className="absolute inset-0 w-full h-full">
-    <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
-         style={{
-           backgroundSize: '200% 100%',
-           animation: 'shimmer 1.5s infinite'
-         }}
+    <div 
+      className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent" 
+      style={{
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite'
+      }}
     />
   </div>
-);
+));
 
-export default function MessageBubble({ message, showAvatar }: MessageBubbleProps) {
-  const [, setIsVisible] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [videoLoaded, setVideoLoaded] = useState(false)
-  const isUser = message.sender === "user"
+ShimmerEffect.displayName = "ShimmerEffect";
+
+const BlogItem = memo(({ blog, isUser }: { blog: any, isUser: boolean }) => (
+  <div 
+    className={`${
+      isUser 
+        ? 'bg-[#0071e3]/60 backdrop-blur-sm border border-white/10' 
+        : 'bg-[#2c2c2e] border border-white/5'
+    } rounded-xl p-2.5 transition-all hover:shadow-md hover:translate-y-[-1px] relative`}
+  >
+    <h3 className="text-white/95 text-[14px] font-medium line-clamp-2 pr-6">{blog.title}</h3>
+    <p className="text-white/70 text-[12px] leading-snug mt-1 line-clamp-3">{blog.description}</p>
+    {blog.link && (
+      <a 
+        href={blog.link}
+        target="_blank"
+        rel="noopener noreferrer" 
+        className="absolute top-2.5 right-2.5 text-white/70 hover:text-white transition-colors"
+        aria-label={`Open ${blog.title} in new tab`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      </a>
+    )}
+  </div>
+));
+
+BlogItem.displayName = "BlogItem";
+
+const ProjectMedia = memo(({ project, onMediaLoad }: { 
+  project: any, 
+  onMediaLoad: () => void 
+}) => {
+  const isVideo = project.image?.endsWith('.mp4') || project.image?.endsWith('.webm');
+  
+  if (isVideo) {
+    return (
+      <video
+        src={project.image || "/placeholder.svg"}
+        title={project.title}
+        className="object-cover w-full h-full"
+        autoPlay
+        muted
+        loop
+        playsInline
+        onLoadedData={onMediaLoad}
+      />
+    );
+  }
+  
+  return (
+    <Image
+      src={project.image || "/placeholder.svg"}
+      alt={project.title}
+      fill
+      sizes="(max-width: 640px) 85vw, 320px"
+      className="object-cover"
+      onLoad={onMediaLoad}
+    />
+  );
+});
+
+ProjectMedia.displayName = "ProjectMedia";
+
+const TechnologyBadge = memo(({ tech }: { tech: string }) => (
+  <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-white/10 text-white/90">
+    {tech}
+  </span>
+));
+
+TechnologyBadge.displayName = "TechnologyBadge";
+
+const TimestampDisplay = memo(({ timestamp, isUser }: { timestamp: string | number, isUser: boolean }) => (
+  <div className={`${isUser ? 'text-white/40 text-right' : 'text-white/40'} text-[9px] mt-1 select-none`}>
+    {typeof timestamp === 'string' 
+      ? timestamp 
+      : new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+  </div>
+));
+
+TimestampDisplay.displayName = "TimestampDisplay";
+
+export default function MessageBubble({ message }: MessageBubbleProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const isUser = message.sender === "user";
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 50)
-    return () => clearTimeout(timer)
-  }, [])
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleMediaLoad = useCallback(() => {
+    setMediaLoaded(true);
+  }, []);
 
   const bubbleStyle = isUser
     ? "bg-gradient-to-br from-[#0c84fe] to-[#0071e3] text-white rounded-[18px] rounded-br-md"
-    : "bg-[#1c1c1e] dark:bg-[#1c1c1e] text-white rounded-[18px] rounded-bl-md"
+    : "bg-[#1c1c1e] dark:bg-[#1c1c1e] text-white rounded-[18px] rounded-bl-md";
+
+  const renderContent = () => {
+    if (message.type === "location") {
+      return (
+        <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[200px] sm:max-w-[240px]">
+          {message.location && <MapWidget location={message.location} />}
+        </div>
+      );
+    }
+
+    if (message.type === "music" && !message.content) {
+      return (
+        <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[85%] sm:max-w-[300px] md:max-w-[320px]">
+          <SpotifyPlaylist />
+        </div>
+      );
+    }
+
+    const bubbleShadow = isUser
+      ? "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)"
+      : "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.08)";
+
+    let bubbleMaxWidth = "max-w-[85%]";
+    if (message.type === "project") bubbleMaxWidth = "max-w-[250px] sm:max-w-[280px]";
+    if (message.type === "music") bubbleMaxWidth = "max-w-[300px] sm:max-w-[320px]";
+
+    return (
+      <div
+        className={`${bubbleStyle} px-3 py-2 shadow-sm ${bubbleMaxWidth}`}
+        style={{ boxShadow: bubbleShadow }}
+      >
+        {message.type === "blog" && (
+          <div className="space-y-2">
+            <p className="text-[14px] leading-tight mb-3">{message.content}</p>
+            {message.blogs && message.blogs.length > 0 && (
+              <div className="space-y-2 mt-3">
+                {message.blogs.map((blog, index) => (
+                  <BlogItem key={index} blog={blog} isUser={isUser} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {message.type === "music" && (
+          <div className="space-y-2">
+            <p className="text-[14px] leading-tight">{message.content}</p>
+            <div className="overflow-hidden rounded-xl mt-1.5">
+              <SpotifyPlaylist />
+            </div>
+          </div>
+        )}
+
+        {message.type === "project" && message.project && (
+          <div className="space-y-2">
+            {message.content && (
+              <p className="text-[14px] leading-tight">{message.content}</p>
+            )}
+            <div className="overflow-hidden rounded-lg">
+              <div className="flex flex-col">
+                <div className="relative h-[112px] bg-gray-800/40">
+                  {!mediaLoaded && (
+                    <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-t-lg">
+                      <ShimmerEffect />
+                    </div>
+                  )}
+                  
+                  <ProjectMedia 
+                    project={message.project} 
+                    onMediaLoad={handleMediaLoad} 
+                  />
+                </div>
+                
+                <div className="p-2.5">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-[14px] font-medium text-white/95">{message.project.title}</h3>
+                    {(message.project.demoUrl || message.project.githubUrl) && (
+                      <a
+                        href={message.project.demoUrl || message.project.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white/70 hover:text-white transition-colors ml-1.5 flex-shrink-0"
+                        aria-label={`Open ${message.project.title} project`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="7" y1="17" x2="17" y2="7"></line>
+                          <polyline points="7 7 17 7 17 17"></polyline>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                  
+                  {message.project.description && (
+                    <p className="text-[12px] text-white/70 leading-tight mt-1">
+                      {message.project.description}
+                    </p>
+                  )}
+
+                  {message.project.technologies && message.project.technologies.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {message.project.technologies.map((tech, i) => (
+                        <TechnologyBadge key={i} tech={tech} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {message.type === "cta" && (
+          <div className="space-y-2">
+            <p className="text-[14px] leading-tight">{message.content}</p>
+            {message.link && (
+              <Link 
+                href={message.link} 
+                className={`${isUser 
+                  ? 'bg-white/20 text-white hover:bg-white/30' 
+                  : 'bg-[#0071e3] text-white hover:bg-[#0077ED]'} 
+                  rounded-full py-1.5 px-3 text-[12px] font-medium flex items-center justify-center mt-1.5 transition-all duration-200`}
+              >
+                {message.linkText || "Learn More"}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </Link>
+            )}
+          </div>
+        )}
+
+        {(!message.type || message.type === "text") && (
+          <p className="text-[14px] leading-snug whitespace-pre-line">{message.content}</p>
+        )}
+
+        {message.timestamp && (
+          <TimestampDisplay 
+            timestamp={message.timestamp instanceof Date ? message.timestamp.getTime() : message.timestamp} 
+            isUser={isUser} 
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <motion.div
       className={`flex items-end gap-2 my-0.5 ${isUser ? "flex-row-reverse" : ""}`}
       initial={{ opacity: 0, y: 8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 8, scale: isVisible ? 1 : 0.98 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      {showAvatar && !isUser && (
+      {!isUser && (
         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
           <Image
             src="/globe.svg"
-            alt="Avatar"
+            alt="Bot Avatar"
             width={24}
             height={24}
             className="w-full h-full object-cover"
+            priority
           />
         </div>
       )}
 
       <div className={`flex-1 flex ${isUser ? "justify-end" : "justify-start"}`}>
-        {message.type === "location" ? (
-            <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[200px] sm:max-w-[240px]">
-            {message.location && <MapWidget location={message.location} />}
-            </div>
-        ) : message.type === "music" && !message.content ? (
-          // Standalone music widget with proper styling when no content is provided
-            <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[85%] sm:max-w-[300px] md:max-w-[320px]">
-            <SpotifyPlaylist />
-            </div>
-        ) : (
-          <div
-            className={`${bubbleStyle} px-3 py-2 max-w-[85%] shadow-sm ${
-              message.type === "project" ? "max-w-[250px] sm:max-w-[280px]" : 
-              message.type === "music" ? "max-w-[300px] sm:max-w-[320px]" : ""
-            }`}
-            style={{
-              boxShadow: isUser
-                ? "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)"
-                : "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.08)",
-            }}
-          >
-            {message.type === "blog" ? (
-                <div className="space-y-2">
-                <p className="text-[14px] leading-tight mb-3">{message.content}</p>
-                {message.blogs && (
-                  <div className="space-y-2 mt-3">
-                  {message.blogs.map((blog, index) => (
-                  <div 
-                  key={index} 
-                  className={`${isUser 
-                  ? 'bg-[#0071e3]/60 backdrop-blur-sm border border-white/10' 
-                  : 'bg-[#2c2c2e] border border-white/5'} 
-                  rounded-xl p-2.5 transition-all hover:shadow-md hover:translate-y-[-1px] relative`}
-                  >
-                  <h3 className="text-white/95 text-[14px] font-medium line-clamp-2 pr-6">{blog.title}</h3>
-                  <p className="text-white/70 text-[12px] leading-snug mt-1 line-clamp-3">{blog.description}</p>
-                  {blog.link && (
-                  <>
-                  <a 
-                    href={blog.link}
-                    target="_blank"
-                    rel="noopener noreferrer" 
-                    className="absolute top-2.5 right-2.5 text-white/70 hover:text-white transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="7" y1="17" x2="17" y2="7"></line>
-                    <polyline points="7 7 17 7 17 17"></polyline>
-                    </svg>
-                  </a>
-                  
-                  </>
-                  )}
-                  </div>
-                  ))}
-                  </div>
-                )}
-                </div>
-            ) : message.type === "music" ? (
-              <div className="space-y-2">
-                <p className="text-[14px] leading-tight">{message.content}</p>
-                <div className="overflow-hidden rounded-xl mt-1.5">
-                  <SpotifyPlaylist />
-                </div>
-              </div>
-            ) : message.type === "project" && message.project ? (
-              <div className="space-y-2">
-                {message.content && (
-                  <p className="text-[14px] leading-tight">{message.content}</p>
-                )}
-                <div className="overflow-hidden rounded-lg">
-                  <div className="flex flex-col">
-                    <div className="relative h-[112px] bg-gray-800/40">
-                      {/* Loading skeleton with shimmer effect */}
-                      {!imageLoaded && !videoLoaded && (
-                        <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-t-lg">
-                          <ShimmerEffect />
-                        </div>
-                      )}
-                      
-                      {message.project.image?.endsWith('.mp4') || message.project.image?.endsWith('.webm') ? (
-                        <video
-                          src={message.project.image || "/placeholder.svg"}
-                          title={message.project.title}
-                          className={`object-cover w-full h-full transition-opacity duration-300 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-                          autoPlay
-                          muted
-                          loop
-                          onLoadedData={() => setVideoLoaded(true)}
-                        />
-                      ) : (
-                        <Image
-                          src={message.project.image || "/placeholder.svg"}
-                          alt={message.project.title}
-                          fill
-                          className={`object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                          onLoad={() => setImageLoaded(true)}
-                        />
-                      )}
-                    </div>
-                    
-                    <div className=" p-2.5">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-[14px] font-medium text-white/95">{message.project.title}</h3>
-                        {(message.project.demoUrl || message.project.githubUrl) && (
-                          <a
-                            href={message.project.demoUrl || message.project.githubUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-white/70 hover:text-white transition-colors ml-1.5 flex-shrink-0"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="7" y1="17" x2="17" y2="7"></line>
-                              <polyline points="7 7 17 7 17 17"></polyline>
-                            </svg>
-                          </a>
-                        )}
-                      </div>
-                      
-                      {message.project.description && (
-                        <p className="text-[12px] text-white/70 leading-tight mt-1">{message.project.description}</p>
-                      )}
-
-                      {message.project.technologies && message.project.technologies.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {message.project.technologies.map((tech, i) => (
-                            <span
-                              key={i}
-                              className="px-1.5 py-0.5 text-[10px] rounded-full bg-white/10 text-white/90"
-                            >
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : message.type === "cta" ? (
-              <div className="space-y-2">
-                <p className="text-[14px] leading-tight">{message.content}</p>
-                {message.link && (
-                  <Link 
-                    href={message.link} 
-                    className={`${isUser 
-                      ? 'bg-white/20 text-white hover:bg-white/30' 
-                      : 'bg-[#0071e3] text-white hover:bg-[#0077ED]'} 
-                      rounded-full py-1.5 px-3 text-[12px] font-medium flex items-center justify-center mt-1.5 transition-all duration-200`}
-                  >
-                    {message.linkText || "Learn More"}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <p className="text-[14px] leading-snug whitespace-pre-line">{message.content}</p>
-            )}
-
-            {message.timestamp && (
-              <div className={`${isUser ? 'text-white/40 text-right' : 'text-white/40'} text-[9px] mt-1 select-none`}>
-                {typeof message.timestamp === 'string' 
-                  ? message.timestamp 
-                  : new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-              </div>
-            )}
-          </div>
-        )}
+        {renderContent()}
       </div>
 
-      {!showAvatar && !isUser && <div className="w-6 flex-shrink-0"></div>}
+      {isUser && (
+        <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm bg-blue-500">
+          <Image
+            src="/globe.svg"
+            alt="User Avatar"
+            width={24}
+            height={24}
+            className="w-full h-full object-cover"
+            priority
+          />
+        </div>
+      )}
     </motion.div>
-  )
+  );
 }
