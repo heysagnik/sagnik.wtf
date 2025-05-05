@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback } from "react"
 import dynamic from "next/dynamic"
 import "leaflet/dist/leaflet.css"
 import type { Location } from "@/lib/types"
-import type { DivIcon } from "leaflet"
 
 const locationCache = new Map<string, {lat: number, lng: number}>();
 

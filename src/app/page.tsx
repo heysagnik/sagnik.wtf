@@ -101,7 +101,8 @@ function BootScreen() {
 }
 
 function MessagingApp() {
-  const { messages, isTyping, addMessage, loadMoreMessages, setAllMessages } = useMessages();
+  // Fixed: Removed unused destructured variables
+  const { messages, isTyping, addMessage } = useMessages();
   const { 
     containerRef, 
     isScrolledUp, 
@@ -121,11 +122,6 @@ function MessagingApp() {
   
   const showCompactHeader = isHeaderScrolled && !isTimestampVisible;
   
-  const handleRefresh = useCallback(() => {
-    const newMessages = loadMoreMessages(3);
-    setAllMessages(prevMessages => [...newMessages, ...prevMessages]);
-    return Promise.resolve();
-  }, [loadMoreMessages, setAllMessages]);
   
   const handleScrollToBottom = useCallback(() => {
     scrollToBottom();
@@ -139,14 +135,11 @@ function MessagingApp() {
         setNewMessageCount(prevMessageCount + 1);
       }
     }
-  }, [isScrolledUp, messages.length]);
+  }, [isScrolledUp, messages.length, newMessageCount]); // Fixed: Added missing dependency
   
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    
-    
- 
   },  [containerRef]);
 
   useEffect(() => {
@@ -234,14 +227,13 @@ export default function Home() {
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">
       <div className="w-full max-w-[500px] h-full">
-        {/* {loading ? (
+        {loading ? (
           <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
             <BootScreen />
           </div>
         ) : (
           <MessagingApp />
-        )} */}
-        <MessagingApp />
+        )}
       </div>
       
       <style jsx global>{`

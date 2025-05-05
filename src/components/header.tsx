@@ -22,6 +22,9 @@ const Header = memo(({ onTimestampVisibilityChange }: HeaderProps) => {
     // Setup intersection observer for the timestamp line
     useEffect(() => {
         if (!timestampRef.current || !onTimestampVisibilityChange) return;
+        
+        // Store a reference to the current DOM node
+        const currentNode = timestampRef.current;
 
         const observer = new IntersectionObserver(
             ([entry]) => {
@@ -33,12 +36,11 @@ const Header = memo(({ onTimestampVisibilityChange }: HeaderProps) => {
             }
         );
 
-        observer.observe(timestampRef.current);
+        observer.observe(currentNode);
 
         return () => {
-            if (timestampRef.current) {
-                observer.unobserve(timestampRef.current);
-            }
+            // Use the stored reference in cleanup
+            observer.unobserve(currentNode);
         };
     }, [onTimestampVisibilityChange]);
 
@@ -66,16 +68,7 @@ const Header = memo(({ onTimestampVisibilityChange }: HeaderProps) => {
                 <p className="text-white/80 text-xs sm:text-sm text-center max-w-xs mb-2 px-4">
                     Product designer & developer. Always curious.
                 </p>
-                
-                {/* <div className="flex items-center flex-wrap justify-center gap-1 text-xs sm:text-sm mb-1 px-2">
-                    <span className="text-white/60">Clients →</span>
-                    <span className="text-blue-400 mx-1">@Framer</span>
-                    <span className="text-white/40 mx-0.5">•</span>
-                    <span className="text-blue-400 mx-1">@Linear</span>
-                    <span className="text-white/40 mx-0.5">•</span>
-                    <span className="text-blue-400 mx-1">@Stripe</span>
-                </div> */}
-                
+                                
                 <div className="flex items-center flex-wrap justify-center gap-1 text-white/50 text-xs px-2">
                     <span>Estd. 2005</span>
                     <span className="mx-0.5">•</span>

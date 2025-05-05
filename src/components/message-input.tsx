@@ -14,7 +14,7 @@ export const MessageInput = memo(({
 }: MessageInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLInputElement>(null);
   
   // Automatically adjust textarea height based on content
   const adjustHeight = () => {
@@ -44,7 +44,7 @@ export const MessageInput = memo(({
     }
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && isEnabled) {
       e.preventDefault();
       handleSend();
@@ -116,14 +116,14 @@ export const MessageInput = memo(({
           transition={{ duration: 0.2 }}
         >
           <input 
-            ref={textareaRef as any}
+            ref={textareaRef}
             className="bg-transparent text-white w-full resize-none outline-none text-sm placeholder:text-white/40"
             placeholder={placeholder}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            onKeyDown={handleKeyDown as any}
+            onKeyDown={handleKeyDown}
             disabled={!isEnabled}
           />
         </motion.div>

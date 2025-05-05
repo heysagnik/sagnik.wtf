@@ -8,7 +8,23 @@ import { SpotifyPlaylist } from "./spotify-widget"
 
 interface MessageBubbleProps {
   message: MessageType
-  showAvatar?: boolean  // We'll keep this prop for backward compatibility
+  showAvatar?: boolean
+}
+
+// Define proper types instead of using 'any'
+interface BlogItemType {
+  title: string;
+  description: string;
+  link?: string;
+}
+
+interface ProjectType {
+  title: string;
+  image?: string;
+  description?: string;
+  demoUrl?: string;
+  githubUrl?: string;
+  technologies?: string[];
 }
 
 const ShimmerEffect = memo(() => (
@@ -25,7 +41,7 @@ const ShimmerEffect = memo(() => (
 
 ShimmerEffect.displayName = "ShimmerEffect";
 
-const BlogItem = memo(({ blog, isUser }: { blog: any, isUser: boolean }) => (
+const BlogItem = memo(({ blog, isUser }: { blog: BlogItemType, isUser: boolean }) => (
   <div 
     className={`${
       isUser 
@@ -55,7 +71,7 @@ const BlogItem = memo(({ blog, isUser }: { blog: any, isUser: boolean }) => (
 BlogItem.displayName = "BlogItem";
 
 const ProjectMedia = memo(({ project, onMediaLoad }: { 
-  project: any, 
+  project: ProjectType, 
   onMediaLoad: () => void 
 }) => {
   const isVideo = project.image?.endsWith('.mp4') || project.image?.endsWith('.webm');

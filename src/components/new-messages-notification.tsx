@@ -1,12 +1,12 @@
 import { memo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface NewMessagesNotificationProps {
     count: number;
     onClick: () => void;
 }
 
-const NewMessagesNotification = memo(({ count, onClick }: NewMessagesNotificationProps) => {
+const NewMessagesNotification = memo(({onClick }: NewMessagesNotificationProps) => {
     const [isVisible, setIsVisible] = useState(true);
     
     const handleClick = () => {

@@ -54,15 +54,16 @@ interface MapWrapperProps {
   locationCity?: string;
 }
 
+// Import the proper type for Leaflet
+
 export const MapWrapper = memo(({ position, locationName, locationCity }: MapWrapperProps) => {
-  const [L, setL] = useState<any>(null);
+  // Remove the unused L state variable
   const [customIcon, setCustomIcon] = useState<DivIcon | null>(null);
 
   useEffect(() => {
     const loadLeaflet = async () => {
       try {
         const leaflet = await import("leaflet");
-        setL(leaflet);
         
         const icon = new leaflet.DivIcon({
           html: `
