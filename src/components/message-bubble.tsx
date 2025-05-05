@@ -29,17 +29,89 @@ interface ProjectType {
   technologies?: string[];
 }
 
-const ShimmerEffect = memo(() => (
-  <div className="absolute inset-0 w-full h-full">
-    <div 
-      className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent" 
-      style={{
-        backgroundSize: '200% 100%',
-        animation: 'shimmer 1.5s infinite'
-      }}
-    />
-  </div>
-));
+const ShimmerEffect = memo(({ 
+  direction = "ltr", 
+  speed = 1.8, 
+  color = "white", 
+}: { 
+  direction?: "ltr" | "rtl" | "ttb" | "btt",
+  speed?: number,
+  color?: string,
+  size?: string
+}) => {
+  const isHorizontal = direction === "ltr" || direction === "rtl";
+  
+  return (
+    <div className="absolute inset-0 w-full h-full overflow-hidden">
+      {/* Primary shimmer layer */}
+      <div 
+        className="absolute inset-0 w-[200%] h-[200%]"
+        style={{
+          background: isHorizontal 
+            ? `linear-gradient(90deg, transparent 0%, ${color}/15 50%, transparent 100%)` 
+            : `linear-gradient(180deg, transparent 0%, ${color}/15 50%, transparent 100%)`,
+          backgroundSize: isHorizontal ? '50% 100%' : '100% 50%',
+          animation: `shimmer-${direction} ${speed}s cubic-bezier(0.4, 0.0, 0.2, 1) infinite`
+        }}
+      />
+      
+      {/* Secondary shimmer layer - adds depth */}
+      <div 
+        className="absolute inset-0 w-[200%] h-[200%] opacity-70"
+        style={{
+          background: isHorizontal 
+            ? `linear-gradient(90deg, transparent 10%, ${color}/10 50%, transparent 90%)` 
+            : `linear-gradient(180deg, transparent 10%, ${color}/10 50%, transparent 90%)`,
+          backgroundSize: isHorizontal ? '70% 100%' : '100% 70%',
+          animation: `shimmer-${direction} ${speed * 1.5}s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite`,
+          animationDelay: `${speed * 0.2}s`
+        }}
+      />
+      
+      {/* Particle effects */}
+      <div className="absolute inset-0">
+        {[...Array(6)].map((_, i) => (
+          <div 
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: `${Math.random() * 4 + 2}px`,
+              height: `${Math.random() * 4 + 2}px`,
+              backgroundColor: `${color}/25`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              opacity: Math.random() * 0.7 + 0.3,
+              animation: `particle-fade ${Math.random() * 3 + 2}s ease-in-out infinite alternate`
+            }}
+          />
+        ))}
+      </div>
+      
+      <style jsx>{`
+        @keyframes shimmer-ltr {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes shimmer-rtl {
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
+        }
+        @keyframes shimmer-ttb {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+        }
+        @keyframes shimmer-btt {
+          0% { transform: translateY(100%); }
+          100% { transform: translateY(-100%); }
+        }
+        @keyframes particle-fade {
+          0% { opacity: 0.2; transform: translate(0, 0) scale(0.8); }
+          100% { opacity: 0.7; transform: translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px) scale(1.2); }
+        }
+      `}</style>
+    </div>
+  );
+});
 
 ShimmerEffect.displayName = "ShimmerEffect";
 
@@ -47,19 +119,29 @@ const BlogItem = memo(({ blog, isUser }: { blog: BlogItemType, isUser: boolean }
   <div 
     className={`${
       isUser 
-        ? 'bg-[#0071e3]/60 backdrop-blur-sm border border-white/10' 
+        ? 'bg-[#0071e3]/80 border border-white/10' 
         : 'bg-[#2c2c2e] border border-white/5'
-    } rounded-xl p-2.5 transition-all hover:shadow-md hover:translate-y-[-1px] relative`}
+    } rounded-xl p-3 relative`}
   >
-    <h3 className="text-white/95 text-[14px] font-medium line-clamp-2 pr-6">{blog.title}</h3>
-    <p className="text-white/70 text-[12px] leading-snug mt-1 line-clamp-3">{blog.description}</p>
+    <div className="relative">
+      <h3 className="text-white/95 text-[14px] font-medium line-clamp-2 pr-6">
+        {blog.title}
+      </h3>
+      
+      <div className="w-8 h-0.5 bg-white/20 my-1.5" />
+      
+      <p className="text-white/70 text-[12px] leading-snug line-clamp-2">
+        {blog.description}
+      </p>
+    </div>
+    
     {blog.link && (
       <a 
         href={blog.link}
         target="_blank"
         rel="noopener noreferrer" 
-        className="absolute top-2.5 right-2.5 text-white/70 hover:text-white transition-colors"
-        aria-label={`Open ${blog.title} in new tab`}
+        className="absolute top-2 right-2 text-white/60 hover:text-white p-1"
+        aria-label={`Open ${blog.title}`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="7" y1="17" x2="17" y2="7"></line>
@@ -406,7 +488,19 @@ export default function MessageBubble(
         <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
       )}
       
-      <style jsx global>{messageBubbleStyles}</style>
+      <style jsx global>{`
+        ${messageBubbleStyles}
+        
+        /* Add this to your global styles */
+        @keyframes shine {
+          0% { left: -100%; }
+          100% { left: 200%; }
+        }
+        
+        .animate-shine {
+          animation: shine 1.2s ease-in-out;
+        }
+      `}</style>
     </motion.div>
   );
 }
