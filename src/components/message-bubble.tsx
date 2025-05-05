@@ -9,6 +9,8 @@ import { SpotifyPlaylist } from "./spotify-widget"
 interface MessageBubbleProps {
   message: MessageType
   showAvatar?: boolean
+  hideThreadLine?: boolean | null
+  noTail?: boolean | null
 }
 
 // Define proper types instead of using 'any'
@@ -81,7 +83,7 @@ const ProjectMedia = memo(({ project, onMediaLoad }: {
       <video
         src={project.image || "/placeholder.svg"}
         title={project.title}
-        className="object-cover w-full h-full"
+        className="object-cover w-full h-full rounded-lg"
         autoPlay
         muted
         loop
@@ -97,7 +99,8 @@ const ProjectMedia = memo(({ project, onMediaLoad }: {
       alt={project.title}
       fill
       sizes="(max-width: 640px) 85vw, 320px"
-      className="object-cover"
+      className="object-cover rounded-lg"
+      
       onLoad={onMediaLoad}
     />
   );
@@ -123,7 +126,90 @@ const TimestampDisplay = memo(({ timestamp, isUser }: { timestamp: string | numb
 
 TimestampDisplay.displayName = "TimestampDisplay";
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+
+const messageBubbleStyles = `
+  :root {
+    --sentColor: #0b93f6;
+    --receiveColor: #e5e5ea;
+    --tailBg: #121212;
+  }
+
+  .bubble-sent {
+    position: relative;
+    background: var(--sentColor);
+    color: white;
+    border-radius: 18px;
+  }
+  .bubble-sent:not(.no-tail):before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border-right: 20px solid var(--sentColor);
+    border-bottom-left-radius: 16px 14px;
+    transform: translateX(15px);
+    z-index: 1;
+  }
+  .bubble-sent:not(.no-tail):after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border-right: 26px solid var(--tailBg);
+    border-bottom-left-radius: 10px;
+    transform: translateX(25px);
+    z-index: 0;
+  }
+
+  .bubble-received {
+    position: relative;
+    background: var(--receiveColor);
+    color: black;
+    border-radius: 18px;
+  }
+  .bubble-received:not(.no-tail):before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border-left: 20px solid var(--receiveColor);
+    border-bottom-right-radius: 16px 14px;
+    transform: translateX(-15px);
+    z-index: 1;
+  }
+  .bubble-received:not(.no-tail):after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    border-left: 26px solid var(--tailBg);
+    border-bottom-right-radius: 10px;
+    transform: translateX(-25px);
+    z-index: 0;
+  }
+
+  /* hide tails when no-tail is applied */
+  .bubble-sent.no-tail:before,
+  .bubble-sent.no-tail:after,
+  .bubble-received.no-tail:before,
+  .bubble-received.no-tail:after {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .bubble-received {
+      background: #3C3C3E;
+      color: white;
+    }
+    .bubble-received:not(.no-tail):before {
+      border-left-color: #3C3C3E;
+    }
+  }
+`;
+
+export default function MessageBubble(
+  { message, showAvatar = true, hideThreadLine, noTail }: MessageBubbleProps
+) {
   const [isVisible, setIsVisible] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const isUser = message.sender === "user";
@@ -137,9 +223,15 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     setMediaLoaded(true);
   }, []);
 
-  const bubbleStyle = isUser
-    ? "bg-gradient-to-br from-[#0c84fe] to-[#0071e3] text-white rounded-[18px] rounded-br-md"
-    : "bg-[#1c1c1e] dark:bg-[#1c1c1e] text-white rounded-[18px] rounded-bl-md";
+  const bubbleClass = isUser 
+    ? "bubble-sent" + (noTail ? " no-tail" : "")
+    : "bubble-received theme-dark" + (noTail ? " no-tail" : "");
+  
+  const bubbleMaxWidth = message.type === "project" 
+    ? "max-w-[250px] sm:max-w-[280px]" 
+    : message.type === "music" 
+      ? "max-w-[300px] sm:max-w-[320px]"
+      : "max-w-[85%]";
 
   const renderContent = () => {
     if (message.type === "location") {
@@ -158,18 +250,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       );
     }
 
-    const bubbleShadow = isUser
-      ? "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)"
-      : "0 1px 2px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.08)";
-
-    let bubbleMaxWidth = "max-w-[85%]";
-    if (message.type === "project") bubbleMaxWidth = "max-w-[250px] sm:max-w-[280px]";
-    if (message.type === "music") bubbleMaxWidth = "max-w-[300px] sm:max-w-[320px]";
-
     return (
       <div
-        className={`${bubbleStyle} px-3 py-2 shadow-sm ${bubbleMaxWidth}`}
-        style={{ boxShadow: bubbleShadow }}
+        className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}
       >
         {message.type === "blog" && (
           <div className="space-y-2">
@@ -202,7 +285,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               <div className="flex flex-col">
                 <div className="relative h-[112px] bg-gray-800/40">
                   {!mediaLoaded && (
-                    <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-t-lg">
+                    <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-lg">
                       <ShimmerEffect />
                     </div>
                   )}
@@ -273,27 +356,32 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         )}
 
         {(!message.type || message.type === "text") && (
-          <p className="text-[14px] leading-snug whitespace-pre-line">{message.content}</p>
+          <p className="text-[16px] leading-[21px] font-[-apple-system,BlinkMacSystemFont,sans-serif] whitespace-pre-line">
+            {message.content}
+          </p>
         )}
 
         {message.timestamp && (
-          <TimestampDisplay 
-            timestamp={message.timestamp instanceof Date ? message.timestamp.getTime() : message.timestamp} 
-            isUser={isUser} 
-          />
+          <div className={`${isUser ? 'text-white/50' : 'text-white/50'} text-right text-[9px] mt-1 select-none`}>
+            {typeof message.timestamp === 'string' 
+              ? message.timestamp 
+              : new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </div>
         )}
       </div>
     );
   };
 
+  const gapClass = hideThreadLine ? "gap-1" : "gap-2";
+
   return (
     <motion.div
-      className={`flex items-end gap-2 my-0.5 ${isUser ? "flex-row-reverse" : ""}`}
+      className={`flex items-end ${gapClass} my-0.5 ${isUser ? "flex-row-reverse" : ""}`}
       initial={{ opacity: 0, y: 8, scale: 0.98 }}
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 8, scale: isVisible ? 1 : 0.98 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      {!isUser && (
+      {!isUser && showAvatar && !hideThreadLine && (
         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
           <Image
             src="/globe.svg"
@@ -306,22 +394,19 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         </div>
       )}
 
+      {!isUser && !showAvatar && !hideThreadLine && (
+        <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
+      )}
+
       <div className={`flex-1 flex ${isUser ? "justify-end" : "justify-start"}`}>
         {renderContent()}
       </div>
 
-      {isUser && (
-        <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm bg-blue-500">
-          <Image
-            src="/globe.svg"
-            alt="User Avatar"
-            width={24}
-            height={24}
-            className="w-full h-full object-cover"
-            priority
-          />
-        </div>
+      {isUser && !hideThreadLine && (
+        <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
       )}
+      
+      <style jsx global>{messageBubbleStyles}</style>
     </motion.div>
   );
 }

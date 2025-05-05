@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion";
 import { useMessages } from "@/hooks/useMessages";
 import { useScrollBehavior } from "@/hooks/useScrollBehavior";
@@ -9,6 +9,7 @@ import { MessageInput } from "@/components/message-input";
 import CompactHeader from "@/components/compact-header";
 import NewMessagesNotification from "@/components/new-messages-notification";
 import TypingIndicator from "@/components/typing-indicator";
+import type { MessageType } from '@/lib/types';
 
 // Animation timing constants (in ms)
 const ANIMATION = {
@@ -69,31 +70,47 @@ function BootScreen() {
   }, [rotateGreetings]);
   
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 blur-3xl opacity-30 rounded-full" />
-        <div className="relative flex flex-col items-center">
+    <div className="flex h-full w-full items-center justify-center bg-black overflow-hidden">
+      {/* Subtle background pulse */}
+      <div className="absolute inset-0 bg-gradient-radial from-blue-900/10 via-purple-900/5 to-black/0 animate-pulse-slow opacity-50 blur-3xl"></div>
+      
+      <div className="relative flex flex-col items-center">
+        {/* Greeting Text Animation */}
+        <AnimatePresence mode="wait">
           {currentGreeting < greetings.length && (
-            <div 
-              className="text-white text-3xl sm:text-4xl font-light tracking-wide transition-all duration-700"
-              style={{ 
-                opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(10px)',
-                filter: isVisible ? 'blur(0)' : 'blur(4px)'
+            <motion.div
+              key={currentGreeting}
+              initial={{ opacity: 0, y: 15, scale: 0.9, filter: 'blur(5px)' }}
+              animate={{ 
+                opacity: isVisible ? 1 : 0, 
+                y: isVisible ? 0 : 15, 
+                scale: isVisible ? 1 : 0.9,
+                filter: isVisible ? 'blur(0px)' : 'blur(5px)',
+                transition: { 
+                  duration: isVisible ? ANIMATION.FADE_IN_DURATION / 1000 : ANIMATION.FADE_OUT_DURATION / 1000, 
+                  ease: isVisible ? "easeOut" : "easeIn" 
+                } 
               }}
+              exit={{ 
+                opacity: 0, 
+                y: -15, 
+                scale: 0.9, 
+                filter: 'blur(5px)',
+                transition: { duration: ANIMATION.FADE_OUT_DURATION / 1000, ease: "easeIn" } 
+              }}
+              className="text-white text-3xl sm:text-4xl font-light tracking-wider"
             >
               {greetings[currentGreeting].text}
-            </div>
+            </motion.div>
           )}
-          <div className="mt-8 h-1 w-16 bg-gray-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white" 
-              style={{
-                width: `${(currentGreeting / greetings.length) * 100}%`,
-                transition: 'width 0.3s ease-in-out'
-              }}
-            />
-          </div>
+        </AnimatePresence>
+        
+        {/* Progress Bar */}
+        <div className="mt-10 h-1 w-20 bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gray-400" 
+            style={{ width: `${((currentGreeting + 1) / greetings.length) * 100}%`, transition: 'width 0.4s ease-in-out' }}
+          />
         </div>
       </div>
     </div>
@@ -101,8 +118,8 @@ function BootScreen() {
 }
 
 function MessagingApp() {
-  // Fixed: Removed unused destructured variables
-  const { messages, isTyping, addMessage } = useMessages();
+  // Get messages from the hook
+  const { messages, isTyping: isApiTyping, addMessage } = useMessages();
   const { 
     containerRef, 
     isScrolledUp, 
@@ -111,8 +128,52 @@ function MessagingApp() {
     autoScrollOnNewContent 
   } = useScrollBehavior();
   
+  // Track visible messages for gradual revealing
+  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>([]);
+  const [isGraduallyTyping, setIsGraduallyTyping] = useState(false);
+  const prevMessagesLength = useRef(0);
+  
   const [isTimestampVisible, setIsTimestampVisible] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
+  
+  // Combined typing indicator state (from API or from gradual typing)
+  const isTyping = isApiTyping || isGraduallyTyping;
+  
+  // Handle slow message revealing - moved from MessageList component
+  useEffect(() => {
+    if (messages.length === 0) return;
+    
+    // Check if we have new messages
+    if (messages.length > prevMessagesLength.current) {
+      // Get the new messages that should be revealed
+      const newMessages = messages.slice(visibleMessages.length);
+      
+      if (newMessages.length === 0) return;
+      
+      // Show typing indicator before revealing the message
+      setIsGraduallyTyping(true);
+      
+      // Calculate typing time based on message length (around 30-60 chars per second)
+      const messageContent = newMessages[0].content || '';
+      // faster typing indicator: 20ms per char, min 200ms, max 1500ms
+      const TYPING_CHAR_DELAY = 20;
+      const TYPING_MIN = 200;
+      const TYPING_MAX = 1500;
+      const typingDelay = Math.min(
+        Math.max(TYPING_MIN, messageContent.length * TYPING_CHAR_DELAY),
+        TYPING_MAX
+      );
+      
+      // After delay, reveal the next message
+      const timer = setTimeout(() => {
+        setIsGraduallyTyping(false);
+        setVisibleMessages(current => [...current, newMessages[0]]);
+        prevMessagesLength.current = visibleMessages.length + 1;
+      }, typingDelay);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [messages, visibleMessages]);
   
   const handleTimestampVisibilityChange = useCallback((isVisible: boolean) => {
     setTimeout(() => {
@@ -121,7 +182,6 @@ function MessagingApp() {
   }, []);
   
   const showCompactHeader = isHeaderScrolled && !isTimestampVisible;
-  
   
   const handleScrollToBottom = useCallback(() => {
     scrollToBottom();
@@ -135,16 +195,16 @@ function MessagingApp() {
         setNewMessageCount(prevMessageCount + 1);
       }
     }
-  }, [isScrolledUp, messages.length, newMessageCount]); // Fixed: Added missing dependency
+  }, [isScrolledUp, messages.length, newMessageCount]);
   
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-  },  [containerRef]);
+  }, [containerRef]);
 
   useEffect(() => {
     autoScrollOnNewContent();
-  }, [messages, isTyping, autoScrollOnNewContent]);
+  }, [visibleMessages, isTyping, autoScrollOnNewContent]);
 
   const handleSendMessage = useCallback((content: string) => {
     addMessage(content);
@@ -177,7 +237,7 @@ function MessagingApp() {
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <MessageList 
-          messages={messages} 
+          messages={visibleMessages} 
           onTimestampVisibilityChange={handleTimestampVisibilityChange}
         />
         <div className="h-4"></div>
@@ -191,7 +251,7 @@ function MessagingApp() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.1 }}
           >
             <TypingIndicator showAvatar/>
           </motion.div>
@@ -245,7 +305,17 @@ export default function Home() {
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
+
+        /* Added animation for the background pulse */
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
         
+        /* Existing keyframes */
         @keyframes pulse-glow {
           0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 4px 6px rgba(0, 0, 0, 0.1); }
           50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -257,6 +327,7 @@ export default function Home() {
           100% { background-position: 200% 0; }
         }
         
+        /* Existing CSS variables and safe area styles */
         :root {
           --sat: env(safe-area-inset-top, 0px);
           --sab: env(safe-area-inset-bottom, 0px);
