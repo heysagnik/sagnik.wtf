@@ -19,23 +19,21 @@ export function generateInitialMessages(): MessageType[] {
       id: "3",
       content: "I try to write a blog post every now and then. Everything is on",
       type: "blog",
-      link: "https://alex.blog",
-      linkText: "alex.blog",
       blogs: [
         {
           title: "Open Source",
           description: "Thoughts & feelings on Open Source",
-          link: "https://alex.blog/open-source",
+          link: "https://sagnik-wtf.vercel.app/open-source",
         },
         {
           title: "Avoiding homework with code (and getting caught)",
           description: "The eventful tale of me getting fed up with my homework",
-          link: "https://alex.blog/avoiding-homework-with-code",
+          link: "https://sagnik-wtf.vercel.app/avoiding-homework-with-code",
         },
         {
           title: "The 0kb Next.js blog",
           description: "How I shipped a Next.js app with a 0kb bundle",
-          link: "https://alex.blog/0kb-nextjs-blog",
+          link: "https://sagnik-wtf.vercel.app/0kb-nextjs-blog",
         }
       ],
       sender: "assistant",
@@ -85,8 +83,8 @@ export function generateInitialMessages(): MessageType[] {
         description: "A personal portfolio built with Next.js and Tailwind CSS",
         image: "/hello.mp4",
         technologies: ["Next.js", "Tailwind", "TypeScript"],
-        githubUrl: "https://github.com/username/portfolio",
-        demoUrl: "https://portfolio.example.com"
+        githubUrl: "https://github.com/heysagnik",
+        demoUrl: "https://sagnik-wtf.vercel.app"
       },
       sender: "assistant",
       content: ""
@@ -100,7 +98,7 @@ export function generateInitialMessages(): MessageType[] {
         image: "/hello.jpg",
         technologies: ["React", "Firebase", "TypeScript"],
         githubUrl: "",
-        demoUrl: "https://chat.example.com"
+        demoUrl: ""
       },
       sender: "assistant",
       content: ""

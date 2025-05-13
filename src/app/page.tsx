@@ -9,7 +9,9 @@ import { MessageInput } from "@/components/message-input";
 import CompactHeader from "@/components/compact-header";
 import NewMessagesNotification from "@/components/new-messages-notification";
 import TypingIndicator from "@/components/typing-indicator";
-import type { MessageType } from '@/lib/types';
+import type { MessageType, Location } from '@/lib/types';
+import SpotifyWidget, { type Track } from "@/components/spotify-widget";
+import MapWidget from "@/components/map-widget";
 
 // Animation timing constants (in ms)
 const ANIMATION = {
@@ -269,26 +271,103 @@ function MessagingApp() {
 }
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [fadeOut, setFadeOut] = useState(false)
+  const [showBootScreen, setShowBootScreen] = useState(true);
+  const [fadeOutBootScreen, setFadeOutBootScreen] = useState(false);
+  const bootScreenTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [musicPreloadReady, setMusicPreloadReady] = useState(false);
+  const [mapPreloadReady, setMapPreloadReady] = useState(false);
+
+  const endBootScreenSequence = useCallback(() => {
+    if (bootScreenTimerRef.current) clearTimeout(bootScreenTimerRef.current);
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+
+    if (showBootScreen && !fadeOutBootScreen) {
+        setFadeOutBootScreen(true);
+        transitionTimerRef.current = setTimeout(() => {
+            setShowBootScreen(false);
+        }, ANIMATION.FINAL_TRANSITION);
+    } else if (showBootScreen && fadeOutBootScreen) {
+        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = setTimeout(() => {
+            setShowBootScreen(false);
+        }, ANIMATION.FINAL_TRANSITION);
+    }
+  }, [showBootScreen, fadeOutBootScreen]);
 
   useEffect(() => {
-    const bootTimer = setTimeout(() => {
-      setFadeOut(true)
-      const transitionTimer = setTimeout(() => {
-        setLoading(false)
-      }, ANIMATION.FINAL_TRANSITION)
-      return () => clearTimeout(transitionTimer)
-    }, ANIMATION.BOOT_SCREEN_DURATION)
+    if ((musicPreloadReady || mapPreloadReady) && showBootScreen && !fadeOutBootScreen) {
+      endBootScreenSequence();
+      return; 
+    }
 
-    return () => clearTimeout(bootTimer)
-  }, [])
+    if (!musicPreloadReady && !mapPreloadReady && showBootScreen && !fadeOutBootScreen) {
+      bootScreenTimerRef.current = setTimeout(() => {
+        endBootScreenSequence();
+      }, ANIMATION.BOOT_SCREEN_DURATION);
+    }
+
+    return () => {
+      if (bootScreenTimerRef.current) clearTimeout(bootScreenTimerRef.current);
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    };
+  }, [musicPreloadReady, mapPreloadReady, showBootScreen, fadeOutBootScreen, endBootScreenSequence]);
+
+  const handleMusicReady = useCallback(() => {
+    if (!musicPreloadReady) {
+      setMusicPreloadReady(true);
+    }
+  }, [musicPreloadReady]);
+
+  const handleMapWidgetReady = useCallback(() => {
+    if (!mapPreloadReady) {
+      setMapPreloadReady(true);
+    }
+  }, [mapPreloadReady]);
+
+  // Define a track to preload. Ensure audioPreviewUrl points to a valid file in /public
+  const firstTrackForPreload: Track | undefined = {
+      id: "preload-track-1",
+      title: "Preload Track",
+      artist: "System",
+      coverArt: "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36", // Example cover art
+      duration: 30, // Example duration
+      spotifyUrl: "https://open.spotify.com", // Placeholder
+      audioPreviewUrl: "/1.mp3" // IMPORTANT: Replace with a valid path to an MP3 in your /public folder
+  };
+
+  // Define a default location for map preloading
+  const defaultLocationForPreload: Location = {
+      name: "Central Park", // Example location
+      city: "New York",
+      // Optionally provide coordinates directly to avoid a Nominatim lookup during preload:
+      // coordinates: { lat: 40.7829, lng: -73.9654 } 
+  };
 
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">
+      {/* Render hidden widgets for preloading */}
+      {showBootScreen && (
+        <div style={{ display: 'none' }}>
+          {firstTrackForPreload && (
+            <SpotifyWidget
+              track={firstTrackForPreload}
+              onAudioReady={handleMusicReady}
+              autoplay={false} // Important: Do not autoplay during boot screen
+            />
+          )}
+          {defaultLocationForPreload && (
+            <MapWidget
+              location={defaultLocationForPreload}
+              onMapReady={handleMapWidgetReady}
+            />
+          )}
+        </div>
+      )}
+
       <div className="w-full max-w-[500px] h-full">
-        {loading ? (
-          <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+        {showBootScreen ? (
+          <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOutBootScreen ? 'opacity-0' : 'opacity-100'}`}>
             <BootScreen />
           </div>
         ) : (

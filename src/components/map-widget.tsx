@@ -67,7 +67,13 @@ async function fetchLocationCoordinates(searchTerm: string) {
   }
 }
 
-export default function MapWidget({ location }: { location: Location }) {
+export default function MapWidget({ 
+  location,
+  onMapReady
+}: { 
+  location: Location,
+  onMapReady?: () => void
+}) {
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -75,36 +81,57 @@ export default function MapWidget({ location }: { location: Location }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     
+    let isMounted = true;
+
     const initializeLocation = async () => {
+      if (!isMounted) return;
+      setIsLoading(true);
+      setHasError(false);
+      setPosition(null);
+
+      let localPosition: [number, number] | null = null;
+      let localError = false;
+
       try {
         if (location.coordinates) {
           const { lat, lng } = location.coordinates;
-          setPosition([lat, lng]);
+          localPosition = [lat, lng];
         } else if (location.city || location.name) {
           const searchTerm = location.city || location.name;
-          const coords = await fetchLocationCoordinates(searchTerm!);
-          if (coords) {
-            setPosition([coords.lat, coords.lng]);
+          if (searchTerm) {
+            const coords = await fetchLocationCoordinates(searchTerm);
+            if (coords) {
+              localPosition = [coords.lat, coords.lng];
+            } else {
+              localError = true;
+            }
           } else {
-            setHasError(true);
+            localError = true;
           }
         } else {
-          setHasError(true);
+          localError = true;
         }
       } catch (error) {
         console.error("Error initializing location:", error);
-        setHasError(true);
+        localError = true;
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setHasError(localError);
+          setPosition(localPosition);
+          if (localPosition && !localError && onMapReady) {
+            onMapReady();
+          }
+        }
       }
     };
 
     initializeLocation();
     
     return () => {
-      // Clean up any potential memory leaks
+      isMounted = false;
     };
-  }, [location]);
+  }, [location, onMapReady]);
 
   const openDirections = useCallback(() => {
     if (!position) return;

@@ -115,37 +115,37 @@ const ShimmerEffect = memo(({
 
 ShimmerEffect.displayName = "ShimmerEffect";
 
-const BlogItem = memo(({ blog, isUser }: { blog: BlogItemType, isUser: boolean }) => (
-  <div 
-    className={`${
-      isUser 
-        ? 'bg-[#0071e3]/80 border border-white/10' 
-        : 'bg-[#2c2c2e] border border-white/5'
-    } rounded-xl p-3 relative`}
+const BlogItem = memo(({ blog}: { blog: BlogItemType }) => (
+  <div
+    className={`
+      group relative rounded-xl p-3 
+      bg-[#1A1A1A]
+      hover:shadow-xl 
+      transition-all duration-300 ease-out 
+    `}
   >
     <div className="relative">
-      <h3 className="text-white/95 text-[14px] font-medium line-clamp-2 pr-6">
+      <h3 className="text-slate-100 text-sm font-semibold line-clamp-2 pr-7"> {/* Crisper, brighter title */}
         {blog.title}
       </h3>
-      
-      <div className="w-8 h-0.5 bg-white/20 my-1.5" />
-      
-      <p className="text-white/70 text-[12px] leading-snug line-clamp-2">
+
+      <div className="w-10 h-px bg-slate-600 my-2" /> {/* Themed separator, blends well */}
+
+      <p className="text-slate-400 text-xs leading-snug line-clamp-3"> {/* Softer, readable description text */}
         {blog.description}
       </p>
     </div>
-    
+
     {blog.link && (
-      <a 
+      <a
         href={blog.link}
         target="_blank"
-        rel="noopener noreferrer" 
-        className="absolute top-2 right-2 text-white/60 hover:text-white p-1"
+        rel="noopener noreferrer"
+        className="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-100 transition-colors duration-150 p-1 rounded-full group-hover:bg-slate-600/50" // Icon styling consistent with the new theme
         aria-label={`Open ${blog.title}`}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="7" y1="17" x2="17" y2="7"></line>
-          <polyline points="7 7 17 7 17 17"></polyline>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 17l9.2-9.2M17 17V7H7" />
         </svg>
       </a>
     )}
@@ -153,6 +153,7 @@ const BlogItem = memo(({ blog, isUser }: { blog: BlogItemType, isUser: boolean }
 ));
 
 BlogItem.displayName = "BlogItem";
+
 
 const ProjectMedia = memo(({ project, onMediaLoad }: { 
   project: ProjectType, 
@@ -342,7 +343,7 @@ export default function MessageBubble(
             {message.blogs && message.blogs.length > 0 && (
               <div className="space-y-2 mt-3">
                 {message.blogs.map((blog, index) => (
-                  <BlogItem key={index} blog={blog} isUser={isUser} />
+                  <BlogItem key={index} blog={blog}/>
                 ))}
               </div>
             )}

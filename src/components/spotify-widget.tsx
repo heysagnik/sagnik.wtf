@@ -21,6 +21,7 @@ interface SpotifyWidgetProps {
   onPlaybackError?: () => void
   autoplay?: boolean
   initialTrack?: number
+  onAudioReady?: () => void; // Add this line
 }
 
 function useAudioPlayer(
@@ -29,7 +30,8 @@ function useAudioPlayer(
   currentTrackIndex: number,
   setCurrentTrackIndex: React.Dispatch<React.SetStateAction<number>>,
   onPlaybackError?: () => void,
-  autoplay?: boolean
+  autoplay?: boolean,
+  onAudioReady?: () => void // Add this parameter
 ) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +87,9 @@ function useAudioPlayer(
     const handleCanPlay = () => {
       setIsLoading(false);
       setIsReady(true);
+      if (onAudioReady) { // Call the callback when audio is ready
+        onAudioReady();
+      }
     };
     
     const handleError = () => {
@@ -109,7 +114,7 @@ function useAudioPlayer(
         window.clearInterval(progressIntervalRef.current);
       }
     };
-  }, [track, currentTrackIndex, onPlaybackError, setCurrentTrackIndex, tracks.length]);
+  }, [track, currentTrackIndex, onPlaybackError, setCurrentTrackIndex, tracks.length, onAudioReady]);
   
   useEffect(() => {
     if (isPlaying && audioRef.current && isReady) {
@@ -347,7 +352,8 @@ export default function SpotifyWidget({
   className = "",
   onPlaybackError,
   autoplay = false,
-  initialTrack = 0
+  initialTrack = 0,
+  onAudioReady // Destructure the new prop
 }: SpotifyWidgetProps) {
   const tracks = trackList || (singleTrack ? [singleTrack] : []);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(initialTrack);
@@ -373,7 +379,8 @@ export default function SpotifyWidget({
     currentTrackIndex,
     setCurrentTrackIndex,
     onPlaybackError,
-    autoplay
+    autoplay,
+    onAudioReady // Pass it to the hook
   );
   
   const openInSpotify = useCallback((e: React.MouseEvent) => {
