@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import type { MessageType } from "@/lib/types"
 import MapWidget from "./map-widget"
 import { SpotifyPlaylist } from "./spotify-widget"
+import { Drawer } from 'vaul'; // Import Drawer
 
 interface MessageBubbleProps {
   message: MessageType
@@ -115,45 +116,56 @@ const ShimmerEffect = memo(({
 
 ShimmerEffect.displayName = "ShimmerEffect";
 
-const BlogItem = memo(({ blog}: { blog: BlogItemType }) => (
+const BlogItem = memo(({ blog }: { blog: BlogItemType }) => (
   <div
     className={`
-      group relative rounded-xl p-3 
-      bg-[#1A1A1A]
-      hover:shadow-xl 
-      transition-all duration-300 ease-out 
+      group relative
+      ${blog.link ? 'cursor-pointer' : ''}
+      [perspective:800px]
     `}
+    onClick={() => {
+      if (blog.link) {
+        window.open(blog.link, "_blank", "noopener,noreferrer");
+      }
+    }}
   >
-    <div className="relative">
-      <h3 className="text-slate-100 text-sm font-semibold line-clamp-2 pr-7"> {/* Crisper, brighter title */}
-        {blog.title}
-      </h3>
+    <div
+      className={`
+        relative rounded-xl p-3
+        bg-[#1A1A1A]
+        hover:shadow-xl
+        transition-all duration-300 ease-out
+        [transform-style:preserve-3d]
+        group-hover:[transform:rotateX(7deg)_rotateY(-7deg)_scale(1.05)]
+      `}
+    >
+      <div className="relative transition-transform duration-300 ease-out group-hover:[transform:translateZ(20px)]">
+        <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
+          {blog.title}
+        </h3>
+        <p className="text-white-400 text-xs leading-snug line-clamp-3 mt-0.5">
+          {blog.description}
+        </p>
+      </div>
 
-      <div className="w-10 h-px bg-slate-600 my-2" /> {/* Themed separator, blends well */}
-
-      <p className="text-slate-400 text-xs leading-snug line-clamp-3"> {/* Softer, readable description text */}
-        {blog.description}
-      </p>
+      {blog.link && (
+        <div
+          className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
+                     p-1 rounded-full group-hover:bg-slate-600/50
+                     transition-all duration-300 ease-out 
+                     group-hover:[transform:translateZ(40px)]"
+          aria-label={`Open ${blog.title}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 17l9.2-9.2M17 17V7H7" />
+          </svg>
+        </div>
+      )}
     </div>
-
-    {blog.link && (
-      <a
-        href={blog.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-100 transition-colors duration-150 p-1 rounded-full group-hover:bg-slate-600/50" // Icon styling consistent with the new theme
-        aria-label={`Open ${blog.title}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M7 17l9.2-9.2M17 17V7H7" />
-        </svg>
-      </a>
-    )}
   </div>
 ));
 
 BlogItem.displayName = "BlogItem";
-
 
 const ProjectMedia = memo(({ project, onMediaLoad }: { 
   project: ProjectType, 
@@ -161,31 +173,117 @@ const ProjectMedia = memo(({ project, onMediaLoad }: {
 }) => {
   const isVideo = project.image?.endsWith('.mp4') || project.image?.endsWith('.webm');
   
-  if (isVideo) {
-    return (
-      <video
-        src={project.image || "/placeholder.svg"}
-        title={project.title}
-        className="object-cover w-full h-full rounded-lg"
-        autoPlay
-        muted
-        loop
-        playsInline
-        onLoadedData={onMediaLoad}
-      />
-    );
-  }
-  
   return (
-    <Image
-      src={project.image || "/placeholder.svg"}
-      alt={project.title}
-      fill
-      sizes="(max-width: 640px) 85vw, 320px"
-      className="object-cover rounded-lg"
-      
-      onLoad={onMediaLoad}
-    />
+    <Drawer.Root>
+      <Drawer.Trigger asChild>
+        <div className="w-full h-full cursor-pointer relative">
+          {isVideo ? (
+            <video
+              src={project.image || "/placeholder.svg"}
+              title={project.title}
+              className="object-cover w-full h-full rounded-lg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              onLoadedData={onMediaLoad}
+            />
+          ) : (
+            <Image
+              src={project.image || "/placeholder.svg"}
+              alt={project.title}
+              fill
+              sizes="(max-width: 640px) 85vw, 320px"
+              className="object-cover rounded-lg"
+              onLoad={onMediaLoad}
+            />
+          )}
+           {/* Optional: Add an icon or overlay to indicate it's clickable for a drawer */}
+           <div className="absolute bottom-1 right-1 bg-black/50 p-1 rounded-full backdrop-blur-sm">
+             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+               <polyline points="15 3 21 3 21 9"></polyline>
+               <polyline points="9 21 3 21 3 15"></polyline>
+               <line x1="21" y1="3" x2="14" y2="10"></line>
+               <line x1="3" y1="21" x2="10" y2="14"></line>
+             </svg>
+           </div>
+        </div>
+      </Drawer.Trigger>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 bg-black/60 z-[5000]" />
+        <Drawer.Content className="bg-[#1E1E1E] text-white flex flex-col rounded-t-[20px] h-[90%] fixed bottom-0 left-0 right-0 z-[5001] outline-none max-w-[500px] mx-auto">
+          <div className="p-4 bg-[#2A2A2A] rounded-t-[10px] flex-shrink-0">
+            <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-500 mb-4" />
+            <Drawer.Title className="font-semibold text-lg mb-1 text-slate-100">
+              {project.title}
+            </Drawer.Title>
+          </div>
+          <div className="p-4 overflow-y-auto flex-grow">
+            {project.image && (
+              <div className="mb-4 rounded-lg overflow-hidden aspect-video relative">
+                {isVideo ? (
+                  <video
+                    src={project.image}
+                    title={project.title}
+                    className="object-contain w-full h-full"
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  <Image
+                    src={project.image}
+                    alt={project.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-contain"
+                  />
+                )}
+              </div>
+            )}
+            {project.description && (
+              <p className="text-slate-300 mb-4 text-sm leading-relaxed">{project.description}</p>
+            )}
+            {project.technologies && project.technologies.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-medium text-slate-200 mb-1.5 text-sm">Technologies:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {project.technologies.map((tech, i) => (
+                    <TechnologyBadge key={i} tech={tech} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3 mt-6">
+              {project.demoUrl && (
+                <a
+                  href={project.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors text-sm"
+                >
+                  Live Demo
+                </a>
+              )}
+              {project.githubUrl && (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium transition-colors text-sm ${
+                    project.demoUrl ? 'bg-gray-600 hover:bg-gray-700 text-slate-100' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  View Code
+                </a>
+              )}
+            </div>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 });
 
@@ -214,7 +312,7 @@ const messageBubbleStyles = `
   :root {
     --sentColor: #0b93f6;
     --receiveColor: #e5e5ea;
-    --tailBg: #121212;
+    --tailBg: #121212; /* Assuming this is your chat background color */
   }
 
   .bubble-sent {
@@ -228,9 +326,9 @@ const messageBubbleStyles = `
     position: absolute;
     bottom: 0;
     right: 0;
-    border-right: 20px solid var(--sentColor);
-    border-bottom-left-radius: 16px 14px;
-    transform: translateX(15px);
+    border-right: 15px solid var(--sentColor); /* Width of the tail */
+    border-bottom-left-radius: 15px; /* Creates a 15px quarter-circle curve */
+    transform: translateX(5px); /* How much the tail sticks out (effective right: -5px) */
     z-index: 1;
   }
   .bubble-sent:not(.no-tail):after {
@@ -238,9 +336,9 @@ const messageBubbleStyles = `
     position: absolute;
     bottom: 0;
     right: 0;
-    border-right: 26px solid var(--tailBg);
-    border-bottom-left-radius: 10px;
-    transform: translateX(25px);
+    border-right: 20px solid var(--tailBg); /* Width of the background element for the tail */
+    border-bottom-left-radius: 12px; /* Curve for the background element, can be same or slightly different */
+    transform: translateX(10px); /* Position for the background element (effective right: -10px) */
     z-index: 0;
   }
 
@@ -255,9 +353,9 @@ const messageBubbleStyles = `
     position: absolute;
     bottom: 0;
     left: 0;
-    border-left: 20px solid var(--receiveColor);
-    border-bottom-right-radius: 16px 14px;
-    transform: translateX(-15px);
+    border-left: 15px solid var(--receiveColor); /* Width of the tail */
+    border-bottom-right-radius: 15px; /* Creates a 15px quarter-circle curve */
+    transform: translateX(-5px); /* How much the tail sticks out (effective left: -5px) */
     z-index: 1;
   }
   .bubble-received:not(.no-tail):after {
@@ -265,13 +363,13 @@ const messageBubbleStyles = `
     position: absolute;
     bottom: 0;
     left: 0;
-    border-left: 26px solid var(--tailBg);
-    border-bottom-right-radius: 10px;
-    transform: translateX(-25px);
+    border-left: 20px solid var(--tailBg); /* Width of the background element for the tail */
+    border-bottom-right-radius: 12px; /* Curve for the background element */
+    transform: translateX(-10px); /* Position for the background element (effective left: -10px) */
     z-index: 0;
   }
 
-  /* hide tails when no-tail is applied */
+ 
   .bubble-sent.no-tail:before,
   .bubble-sent.no-tail:after,
   .bubble-received.no-tail:before,
@@ -443,14 +541,6 @@ export default function MessageBubble(
             {message.content}
           </p>
         )}
-
-        {message.timestamp && (
-          <div className={`${isUser ? 'text-white/50' : 'text-white/50'} text-right text-[9px] mt-1 select-none`}>
-            {typeof message.timestamp === 'string' 
-              ? message.timestamp 
-              : new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-          </div>
-        )}
       </div>
     );
   };
@@ -467,12 +557,13 @@ export default function MessageBubble(
       {!isUser && showAvatar && !hideThreadLine && (
         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
           <Image
-            src="/globe.svg"
+            src="/char.png"
             alt="Bot Avatar"
-            width={24}
-            height={24}
+            width={30}
+            height={30}
             className="w-full h-full object-cover"
             priority
+            quality={100} // Added for higher quality
           />
         </div>
       )}
@@ -492,7 +583,6 @@ export default function MessageBubble(
       <style jsx global>{`
         ${messageBubbleStyles}
         
-        /* Add this to your global styles */
         @keyframes shine {
           0% { left: -100%; }
           100% { left: 200%; }

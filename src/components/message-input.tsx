@@ -7,6 +7,9 @@ interface MessageInputProps {
   placeholder?: string;
 }
 
+// Replace with your WhatsApp phone number (e.g., 15551234567 for a US number)
+const YOUR_WHATSAPP_PHONE_NUMBER = "919434414677"; 
+
 export const MessageInput = memo(({ 
   onSend, 
   isEnabled = true, 
@@ -32,7 +35,15 @@ export const MessageInput = memo(({
 
   const handleSend = () => {
     if (inputValue.trim() && onSend && isEnabled) {
-      onSend(inputValue.trim());
+      const messageToSend = inputValue.trim();
+      
+      const encodedMessage = encodeURIComponent(messageToSend);
+      const whatsappUrl = `https://wa.me/${YOUR_WHATSAPP_PHONE_NUMBER}?text=${encodedMessage}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      
+      // You can still call onSend if you want to update the local UI as well
+      onSend?.(messageToSend);
+      
       setInputValue("");
       
       // Reset focus to textarea after sending

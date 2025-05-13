@@ -51,7 +51,7 @@ const Header = memo(({ onTimestampVisibilityChange }: HeaderProps) => {
                 {/* Avatar with online indicator */}
                 <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full relative mb-2 sm:mb-3">
                     <Image
-                        src="/globe.svg"
+                        src="/char.png"
                         alt="User Avatar"
                         width={80}
                         height={80}

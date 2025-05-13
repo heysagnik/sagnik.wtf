@@ -74,7 +74,7 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
             >
               <div className="rounded-full overflow-hidden w-full h-full">
                 <Image
-                  src="/globe.svg"
+                  src="/char.png"
                   alt="User Avatar"
                   width={40}
                   height={40}

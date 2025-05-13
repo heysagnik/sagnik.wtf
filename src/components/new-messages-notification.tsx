@@ -53,7 +53,7 @@ const NewMessagesNotification = memo(({onClick }: NewMessagesNotificationProps) 
             }}
             aria-label="2 new messages, tap to view"
         >
-            <span className="text-white text-sm font-medium tracking-wide">
+            <span className="text-white text-xs sm:text-sm font-medium tracking-wide">
                 2 new messages
             </span>
             

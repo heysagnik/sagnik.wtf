@@ -4,7 +4,7 @@ export function generateInitialMessages(): MessageType[] {
   return [
     {
       id: "1",
-      content: "I'm Sagnik, I'm a software engineer",
+      content: "I'm Sagnik, I'm love building products",
       type: "text",
       sender: "assistant",
     },
