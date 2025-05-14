@@ -1,10 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { AnimatePresence, motion } from "framer-motion";
-import { useMessages } from "@/hooks/useMessages";
-import { useScrollBehavior } from "@/hooks/useScrollBehavior";
-import type { MessageType, Location } from '@/lib/types';
+import type { Location } from '@/lib/types';
 import { MusicPlaylist } from "@/components/music-widget";
 import MapWidget from "@/components/map-widget";
 import BootScreen from "@/components/boot-screen"; // Import BootScreen
