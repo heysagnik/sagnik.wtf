@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react"
+import { useState, useEffect, memo, useCallback, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -116,54 +116,99 @@ const ShimmerEffect = memo(({
 
 ShimmerEffect.displayName = "ShimmerEffect";
 
-const BlogItem = memo(({ blog }: { blog: BlogItemType }) => (
-  <div
-    className={`
-      group relative
-      ${blog.link ? 'cursor-pointer' : ''}
-      [perspective:800px]
-    `}
-    onClick={() => {
-      if (blog.link) {
-        window.open(blog.link, "_blank", "noopener,noreferrer");
-      }
-    }}
-  >
-    <div
-      className={`
-        relative rounded-xl p-3
-        bg-[#1A1A1A]
-        hover:shadow-xl
-        transition-all duration-300 ease-out
-        [transform-style:preserve-3d]
-        group-hover:[transform:rotateX(7deg)_rotateY(-7deg)_scale(1.05)]
-      `}
-    >
-      <div className="relative transition-transform duration-300 ease-out group-hover:[transform:translateZ(20px)]">
-        <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
-          {blog.title}
-        </h3>
-        <p className="text-white-400 text-xs leading-snug line-clamp-3 mt-0.5">
-          {blog.description}
-        </p>
-      </div>
+const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    
+    // Get the card's position and dimensions
+    const rect = cardRef.current.getBoundingClientRect();
+    
+    // Calculate mouse position relative to the card center
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Calculate the rotation angles (-15 to 15 degrees)
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 10;
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 10;
+    
+    setRotation({ x: rotateX, y: rotateY });
+  }, []);
+  
+  const handleMouseEnter = () => setIsHovering(true);
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setRotation({ x: 0, y: 0 });
+  };
 
-      {blog.link && (
-        <div
-          className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
-                     p-1 rounded-full group-hover:bg-slate-600/50
-                     transition-all duration-300 ease-out 
-                     group-hover:[transform:translateZ(40px)]"
-          aria-label={`Open ${blog.title}`}
+  return (
+    <div
+      ref={cardRef}
+      className={`
+        group relative
+        ${blog.link ? 'cursor-pointer' : ''}
+        [perspective:800px]
+      `}
+      onClick={() => {
+        if (blog.link) {
+          window.open(blog.link, "_blank", "noopener,noreferrer");
+        }
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div
+        className={`
+          relative rounded-xl p-3
+          bg-[#1A1A1A]
+          hover:shadow-xl
+          transition-all duration-300 ease-out
+          [transform-style:preserve-3d]
+        `}
+        style={{
+          transform: isHovering 
+            ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.05)` 
+            : 'rotateX(0deg) rotateY(0deg) scale(1)',
+          transition: isHovering ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out'
+        }}
+      >
+        <div 
+          className="relative transition-transform duration-300 ease-out"
+          style={{
+            transform: isHovering ? 'translateZ(20px)' : 'translateZ(0)'
+          }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 17l9.2-9.2M17 17V7H7" />
-          </svg>
+          <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
+            {blog.title}
+          </h3>
+          <p className="text-white-400 text-xs leading-snug line-clamp-3 mt-0.5">
+            {blog.description}
+          </p>
         </div>
-      )}
+
+        {blog.link && (
+          <div
+            className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
+                     p-1 rounded-full group-hover:bg-slate-600/50
+                     transition-all duration-300 ease-out"
+            style={{
+              transform: isHovering ? 'translateZ(40px)' : 'translateZ(0)'
+            }}
+            aria-label={`Open ${blog.title}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17l9.2-9.2M17 17V7H7" />
+            </svg>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-));
+  );
+});
 
 BlogItem.displayName = "BlogItem";
 
@@ -619,7 +664,7 @@ export default function MessageBubble(
         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
           <Image
             src="/char.png"
-            alt="Bot Avatar"
+            alt="Avatar"
             width={30}
             height={30}
             className="w-full h-full object-cover"

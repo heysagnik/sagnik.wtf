@@ -4,14 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { AnimatePresence, motion } from "framer-motion";
 import { useMessages } from "@/hooks/useMessages";
 import { useScrollBehavior } from "@/hooks/useScrollBehavior";
-import MessageList from "@/components/message-list";
-import { MessageInput } from "@/components/message-input";
-import CompactHeader from "@/components/compact-header";
-import NewMessagesNotification from "@/components/new-messages-notification";
-import TypingIndicator from "@/components/typing-indicator";
 import type { MessageType, Location } from '@/lib/types';
 import { MusicPlaylist } from "@/components/music-widget";
 import MapWidget from "@/components/map-widget";
+import BootScreen from "@/components/boot-screen"; // Import BootScreen
+import MessagingApp from "@/components/messaging-app"; // Import MessagingApp
 
 // Animation timing constants (in ms)
 const ANIMATION = {
@@ -22,254 +19,6 @@ const ANIMATION = {
   FINAL_TRANSITION: 1000
 }
 
-type GreetingType = {
-  text: string;
-  language: string;
-}
-
-function BootScreen() {
-  const [currentGreeting, setCurrentGreeting] = useState(0)
-  const [isVisible, setIsVisible] = useState(true)
-  
-  const greetings: GreetingType[] = [
-    { text: "Hello", language: "English" },
-    { text: "こんにちは", language: "Japanese" },
-    { text: "Bonjour", language: "French" },
-    { text: "नमस्ते", language: "Hindi" },
-    { text: "Hola", language: "Spanish" },
-    { text: "Ciao", language: "Italian" },
-    { text: "안녕하세요", language: "Korean" },
-    { text: "你好", language: "Chinese" },
-    { text: "Olá", language: "Portuguese" },
-    { text: "Hallo", language: "German" }
-  ]
-
-  const rotateGreetings = useCallback((index: number) => {
-    if (index >= greetings.length) return;
-    
-    setCurrentGreeting(index);
-    setIsVisible(true);
-    
-    const fadeOutTimer = setTimeout(() => {
-      setIsVisible(false);
-      
-      const nextGreetingTimer = setTimeout(() => {
-        rotateGreetings(index + 1);
-      }, ANIMATION.FADE_OUT_DURATION);
-      
-      return () => clearTimeout(nextGreetingTimer);
-    }, ANIMATION.DISPLAY_DURATION);
-    
-    return () => clearTimeout(fadeOutTimer);
-  }, [greetings.length]);
-
-  useEffect(() => {
-    const initialTimer = setTimeout(() => {
-      rotateGreetings(0);
-    }, 100);
-    
-    return () => clearTimeout(initialTimer);
-  }, [rotateGreetings]);
-  
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-black overflow-hidden">
-      {/* Subtle background pulse */}
-      <div className="absolute inset-0 bg-gradient-radial from-blue-900/10 via-purple-900/5 to-black/0 animate-pulse-slow opacity-50 blur-3xl"></div>
-      
-      <div className="relative flex flex-col items-center">
-        {/* Greeting Text Animation */}
-        <AnimatePresence mode="wait">
-          {currentGreeting < greetings.length && (
-            <motion.div
-              key={currentGreeting}
-              initial={{ opacity: 0, y: 15, scale: 0.9, filter: 'blur(5px)' }}
-              animate={{ 
-                opacity: isVisible ? 1 : 0, 
-                y: isVisible ? 0 : 15, 
-                scale: isVisible ? 1 : 0.9,
-                filter: isVisible ? 'blur(0px)' : 'blur(5px)',
-                transition: { 
-                  duration: isVisible ? ANIMATION.FADE_IN_DURATION / 1000 : ANIMATION.FADE_OUT_DURATION / 1000, 
-                  ease: isVisible ? "easeOut" : "easeIn" 
-                } 
-              }}
-              exit={{ 
-                opacity: 0, 
-                y: -15, 
-                scale: 0.9, 
-                filter: 'blur(5px)',
-                transition: { duration: ANIMATION.FADE_OUT_DURATION / 1000, ease: "easeIn" } 
-              }}
-              className="text-white text-3xl sm:text-4xl font-light tracking-wider"
-            >
-              {greetings[currentGreeting].text}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Progress Bar */}
-        <div className="mt-10 h-1 w-20 bg-gray-700 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gray-400" 
-            style={{ width: `${((currentGreeting + 1) / greetings.length) * 100}%`, transition: 'width 0.4s ease-in-out' }}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MessagingApp() {
-  // Get messages from the hook
-  const { messages, isTyping: isApiTyping, addMessage } = useMessages();
-  const { 
-    containerRef, 
-    isScrolledUp, 
-    isHeaderScrolled, 
-    scrollToBottom, 
-    autoScrollOnNewContent 
-  } = useScrollBehavior();
-  
-  // Track visible messages for gradual revealing
-  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>([]);
-  const [isGraduallyTyping, setIsGraduallyTyping] = useState(false);
-  const prevMessagesLength = useRef(0);
-  
-  const [isTimestampVisible, setIsTimestampVisible] = useState(false);
-  const [newMessageCount, setNewMessageCount] = useState(0);
-  
-  // Combined typing indicator state (from API or from gradual typing)
-  const isTyping = isApiTyping || isGraduallyTyping;
-  
-  // Handle slow message revealing - moved from MessageList component
-  useEffect(() => {
-    if (messages.length === 0) return;
-    
-    // Check if we have new messages
-    if (messages.length > prevMessagesLength.current) {
-      // Get the new messages that should be revealed
-      const newMessages = messages.slice(visibleMessages.length);
-      
-      if (newMessages.length === 0) return;
-      
-      // Show typing indicator before revealing the message
-      setIsGraduallyTyping(true);
-      
-      // Calculate typing time based on message length (around 30-60 chars per second)
-      const messageContent = newMessages[0].content || '';
-      // faster typing indicator: 20ms per char, min 200ms, max 1500ms
-      const TYPING_CHAR_DELAY = 20;
-      const TYPING_MIN = 200;
-      const TYPING_MAX = 1500;
-      const typingDelay = Math.min(
-        Math.max(TYPING_MIN, messageContent.length * TYPING_CHAR_DELAY),
-        TYPING_MAX
-      );
-      
-      // After delay, reveal the next message
-      const timer = setTimeout(() => {
-        setIsGraduallyTyping(false);
-        setVisibleMessages(current => [...current, newMessages[0]]);
-        prevMessagesLength.current = visibleMessages.length + 1;
-      }, typingDelay);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [messages, visibleMessages]);
-  
-  const handleTimestampVisibilityChange = useCallback((isVisible: boolean) => {
-    setTimeout(() => {
-      setIsTimestampVisible(isVisible);
-    }, isVisible ? 0 : 100);
-  }, []);
-  
-  const showCompactHeader = isHeaderScrolled && !isTimestampVisible;
-  
-  const handleScrollToBottom = useCallback(() => {
-    scrollToBottom();
-    setNewMessageCount(0);
-  }, [scrollToBottom]);
-  
-  useEffect(() => {
-    if (isScrolledUp && messages.length > 0) {
-      const prevMessageCount = newMessageCount;
-      if (prevMessageCount < messages.length) {
-        setNewMessageCount(prevMessageCount + 1);
-      }
-    }
-  }, [isScrolledUp, messages.length, newMessageCount]);
-  
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-  }, [containerRef]);
-
-  useEffect(() => {
-    autoScrollOnNewContent();
-  }, [visibleMessages, isTyping, autoScrollOnNewContent]);
-
-  const handleSendMessage = useCallback((content: string) => {
-    addMessage(content);
-    setTimeout(scrollToBottom, 100);
-    setNewMessageCount(0);
-  }, [addMessage, scrollToBottom]);
-
-  return (
-    <div className="w-full h-full flex flex-col bg-black overflow-hidden">
-      <div className="h-safe-area-top bg-black flex-shrink-0"></div>
-      
-      <div className="absolute top-0 left-0 right-0 h-16 sm:h-20 z-10 pointer-events-none">
-        <div className="w-full h-full bg-gradient-to-b from-black via-black/80 to-transparent"></div>
-      </div>
-      
-      <CompactHeader isVisible={showCompactHeader} />
-      
-      <AnimatePresence>
-        {isScrolledUp && newMessageCount > 0 && showCompactHeader && (
-          <NewMessagesNotification 
-            count={newMessageCount} 
-            onClick={handleScrollToBottom} 
-          />
-        )}
-      </AnimatePresence>
-      
-      <div 
-        ref={containerRef} 
-        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col scrollbar-hide px-3"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <MessageList 
-          messages={visibleMessages} 
-          onTimestampVisibilityChange={handleTimestampVisibilityChange}
-        />
-        <div className="h-4"></div>
-      </div>
-      
-      {/* Typing indicator positioned just above the input bar */}
-      <AnimatePresence>
-        {isTyping && (
-          <motion.div
-            className="px-3 pt-1 pb-1"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
-            transition={{ duration: 0.1 }}
-          >
-            <TypingIndicator showAvatar/>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <div className="bg-black/95 backdrop-blur-sm w-full flex-shrink-0 border-t border-white/5">
-        <div className="absolute top-[-1px] inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-        <MessageInput onSend={handleSendMessage} isEnabled />
-      </div>
-      
-      <div className="h-safe-area-bottom bg-black w-full flex-shrink-0"></div>
-    </div>
-  );
-}
-
 export default function Home() {
   const [showBootScreen, setShowBootScreen] = useState(true);
   const [fadeOutBootScreen, setFadeOutBootScreen] = useState(false);
@@ -277,41 +26,101 @@ export default function Home() {
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [musicPreloadReady, setMusicPreloadReady] = useState(false);
   const [mapPreloadReady, setMapPreloadReady] = useState(false);
+  const [charImageLoaded, setCharImageLoaded] = useState(false);
+
+  // Effect for cleaning up timers on component unmount
+  useEffect(() => {
+    return () => {
+      if (bootScreenTimerRef.current) {
+        clearTimeout(bootScreenTimerRef.current);
+        bootScreenTimerRef.current = null;
+      }
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
 
   const endBootScreenSequence = useCallback(() => {
-    if (bootScreenTimerRef.current) clearTimeout(bootScreenTimerRef.current);
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    // Clear any existing timers this sequence might interact with or supersede
+    if (bootScreenTimerRef.current) {
+      clearTimeout(bootScreenTimerRef.current);
+      bootScreenTimerRef.current = null;
+    }
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
 
     if (showBootScreen && !fadeOutBootScreen) {
-        setFadeOutBootScreen(true);
-        transitionTimerRef.current = setTimeout(() => {
-            setShowBootScreen(false);
-        }, ANIMATION.FINAL_TRANSITION);
+      console.log("Starting fade out of boot screen.");
+      setFadeOutBootScreen(true);
+      transitionTimerRef.current = setTimeout(() => {
+        console.log("Fade out complete. Hiding boot screen.");
+        setShowBootScreen(false);
+      }, ANIMATION.FINAL_TRANSITION);
     } else if (showBootScreen && fadeOutBootScreen) {
-        if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      // If already fading, ensure the timer is set to hide it eventually
+      console.log("Boot screen already fading out. Ensuring final transition timer is active.");
+      if (!transitionTimerRef.current) { // Only set if not already set by a concurrent call
         transitionTimerRef.current = setTimeout(() => {
-            setShowBootScreen(false);
+          setShowBootScreen(false);
         }, ANIMATION.FINAL_TRANSITION);
+      }
+    } else if (!showBootScreen) {
+      console.log("Boot screen already hidden.");
     }
   }, [showBootScreen, fadeOutBootScreen]);
 
   useEffect(() => {
-    if ((musicPreloadReady || mapPreloadReady) && showBootScreen && !fadeOutBootScreen) {
-      endBootScreenSequence();
-      return; 
-    }
-
-    if (!musicPreloadReady && !mapPreloadReady && showBootScreen && !fadeOutBootScreen) {
-      bootScreenTimerRef.current = setTimeout(() => {
-        endBootScreenSequence();
-      }, ANIMATION.BOOT_SCREEN_DURATION);
-    }
-
-    return () => {
-      if (bootScreenTimerRef.current) clearTimeout(bootScreenTimerRef.current);
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    const img = new Image();
+    img.src = "/char.png";
+    img.onload = () => {
+      console.log("/char.png loaded successfully.");
+      setCharImageLoaded(true);
     };
-  }, [musicPreloadReady, mapPreloadReady, showBootScreen, fadeOutBootScreen, endBootScreenSequence]);
+    img.onerror = () => {
+      console.error("Failed to load /char.png. Boot screen might proceed based on timeout or other resources.");
+      // Set to true to not block indefinitely, or handle error more gracefully
+      setCharImageLoaded(true); 
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showBootScreen && !fadeOutBootScreen) {
+      if (musicPreloadReady && charImageLoaded) {
+        console.log("Music and char.png loaded. Ending boot screen sequence.");
+        // endBootScreenSequence will clear bootScreenTimerRef if it was running.
+        endBootScreenSequence();
+      } else {
+        // Resources not yet loaded, ensure the fallback timer is (re)set.
+        // Clear previous timer before setting a new one.
+        if (bootScreenTimerRef.current) {
+          clearTimeout(bootScreenTimerRef.current);
+          bootScreenTimerRef.current = null; 
+        }
+        console.log(`Setting/Resetting boot screen fallback timer for ${ANIMATION.BOOT_SCREEN_DURATION}ms. Waiting for: music (${musicPreloadReady}), char.png (${charImageLoaded})`);
+        bootScreenTimerRef.current = setTimeout(() => {
+          console.warn(`Boot screen fallback timer (${ANIMATION.BOOT_SCREEN_DURATION}ms) expired. Forcing end of boot sequence.`);
+          endBootScreenSequence();
+        }, ANIMATION.BOOT_SCREEN_DURATION);
+      }
+    }
+
+    // Cleanup for this specific effect run
+    return () => {
+      // This effect is responsible for setting and managing bootScreenTimerRef (the fallback timer).
+      // Clean it up if the effect re-runs. The general unmount effect handles final unmount.
+      if (bootScreenTimerRef.current) {
+        clearTimeout(bootScreenTimerRef.current);
+        bootScreenTimerRef.current = null;
+      }
+      // DO NOT clear transitionTimerRef.current here, as this cleanup runs on dependency changes,
+      // and could prematurely clear the timer set by endBootScreenSequence.
+      // endBootScreenSequence and the unmount effect handle transitionTimerRef.
+    };
+  }, [musicPreloadReady, charImageLoaded, showBootScreen, fadeOutBootScreen, endBootScreenSequence]);
 
   const handleMusicReady = useCallback(() => {
     if (!musicPreloadReady) {

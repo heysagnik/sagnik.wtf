@@ -100,6 +100,29 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
                 Developer
               </motion.p>
             </div>
+
+            <motion.button
+              variants={childVariants}
+              className="ml-auto px-3 py-1.5 text-xs font-medium text-white 
+              bg-gradient-to-b from-blue-500 to-blue-700 
+              border-b-2 border-blue-900
+              shadow-[0_4px_6px_-1px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] 
+              hover:translate-y-[-1px] 
+              hover:shadow-[0_6px_8px_-1px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] 
+              active:translate-y-[1px] 
+              active:shadow-[0_2px_3px_-1px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] 
+              rounded-md transition-all duration-150 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+              flex items-center gap-1.5"
+              onClick={() => {
+                window.open('https://x.com/heysagnik', '_blank');
+              }}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              Follow Me
+            </motion.button>
           </div>
         </motion.div>
       )}

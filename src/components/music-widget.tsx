@@ -400,8 +400,14 @@ export default function MusicWidget({
   const tracks = trackList || (singleTrack ? [singleTrack] : []);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(initialTrack);
   const [bgColor, setBgColor] = useState('rgba(74, 59, 51, 0.9)');
+  const [thumbOffset, setThumbOffset] = useState(6); // Default offset
 
   const track = tracks[currentTrackIndex];
+
+  useEffect(() => {
+    // Set the thumb offset based on window width only on the client side
+    setThumbOffset(window.innerWidth < 640 ? 4 : 6);
+  }, []);
 
   useEffect(() => {
     if (!track?.coverArt || typeof window === 'undefined') {
@@ -501,10 +507,10 @@ export default function MusicWidget({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="backdrop-blur-md rounded-xl shadow-lg p-4 flex"
+        className="backdrop-blur-md rounded-xl shadow-lg p-2 sm:p-4 flex"
         style={{ backgroundColor: bgColor, transition: 'background-color 0.5s ease' }}
       >
-        <div className="w-24 h-24 md:w-28 md:h-28 flex-shrink-0 relative">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex-shrink-0 relative">
           <Image
             src={track.coverArt}
             alt={`${track.title} by ${track.artist}`}
@@ -516,20 +522,20 @@ export default function MusicWidget({
           />
           {error && (
             <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-1 rounded-lg">
-              <span className="text-[9px] text-center text-white/80 leading-tight">{error}</span>
+              <span className="text-[8px] sm:text-[9px] text-center text-white/80 leading-tight">{error}</span>
             </div>
           )}
           {(isLoading && !isReady && !error) && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
-              <div className="w-6 h-6 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col flex-grow ml-3 md:ml-4 justify-between min-w-0 py-1">
+        <div className="flex flex-col flex-grow ml-2 sm:ml-3 md:ml-4 justify-between min-w-0 py-0 sm:py-1">
           <div className="flex justify-between items-start">
             <TrackInfo title={track.title} artist={track.artist} />
-            <SpeakerIconFilled className="w-5 h-5 text-gray-300 hover:text-white cursor-pointer flex-shrink-0" />
+            <SpeakerIconFilled className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 hover:text-white cursor-pointer flex-shrink-0" />
           </div>
 
           <div className="my-1 md:my-2">
@@ -544,11 +550,11 @@ export default function MusicWidget({
             >
               <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }} />
               <div 
-                className="absolute w-3 h-3 bg-white rounded-full top-1/2 transform -translate-y-1/2 shadow-md group-hover:scale-110 transition-transform"
-                style={{ left: `calc(${progress}% - 6px)` }}
+                className="absolute w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full top-1/2 transform -translate-y-1/2 shadow-md group-hover:scale-110 transition-transform"
+                style={{ left: `calc(${progress}% - ${thumbOffset}px)` }}
               ></div>
             </div>
-            <div className="flex justify-between text-xs text-gray-300 mt-1 px-0.5">
+            <div className="flex justify-between text-[10px] sm:text-xs text-gray-300 mt-1 px-0.5">
               <span>{formatTime(currentTime)}</span>
               <span>-{formatTime(remainingTime)}</span>
             </div>
