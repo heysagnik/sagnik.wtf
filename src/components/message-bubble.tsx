@@ -2,10 +2,11 @@ import { useState, useEffect, memo, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import type { MessageType } from "@/lib/types"
+import type { MessageType } from "@/lib/types" 
 import MapWidget from "./map-widget"
-import { SpotifyPlaylist } from "./spotify-widget"
-import { Drawer } from 'vaul'; // Import Drawer
+import { MusicPlaylist } from "./music-widget"
+import { Drawer } from 'vaul';
+
 
 interface MessageBubbleProps {
   message: MessageType
@@ -14,7 +15,6 @@ interface MessageBubbleProps {
   noTail?: boolean | null
 }
 
-// Define proper types instead of using 'any'
 interface BlogItemType {
   title: string;
   description: string;
@@ -408,11 +408,17 @@ export default function MessageBubble(
     ? "bubble-sent" + (noTail ? " no-tail" : "")
     : "bubble-received theme-dark" + (noTail ? " no-tail" : "");
   
-  const bubbleMaxWidth = message.type === "project" 
-    ? "max-w-[250px] sm:max-w-[280px]" 
-    : message.type === "music" 
-      ? "max-w-[300px] sm:max-w-[320px]"
-      : "max-w-[85%]";
+  let currentBubbleMaxWidth = "max-w-[85%]"; // Default
+  if (message.type === "project") {
+    currentBubbleMaxWidth = "max-w-[250px] sm:max-w-[280px]";
+  } else if (message.type === "music") { // Covers both music with and without content for max-width
+    currentBubbleMaxWidth = "max-w-[300px] sm:max-w-[320px]";
+  } else if (message.type === "location") {
+    currentBubbleMaxWidth = "max-w-[200px] sm:max-w-[240px]";
+  }
+  // Add specific max-width for photos or resume if needed, e.g.:
+  // else if (message.type === "photos") { currentBubbleMaxWidth = "max-w-lg"; }
+
 
   const renderContent = () => {
     if (message.type === "location") {
@@ -426,14 +432,69 @@ export default function MessageBubble(
     if (message.type === "music" && !message.content) {
       return (
         <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[85%] sm:max-w-[300px] md:max-w-[320px]">
-          <SpotifyPlaylist />
+          <MusicPlaylist />
         </div>
       );
     }
 
+    if (message.type === "photos" && message.photos) {
+      return (
+        <div className={`${bubbleClass} px-3 py-2.5 ${currentBubbleMaxWidth} relative`}>
+          {message.content && (
+            <p className="text-[14px] leading-tight mb-2.5">{message.content}</p>
+          )}
+          <div className="flex flex-wrap gap-2 justify-center"> {/* Centering items if they don't fill the row */}
+            {message.photos.map((photo, index) => (
+              <div key={index} className="w-[calc(50%-4px)] sm:w-[calc(33.333%-6px)] aspect-square rounded-md overflow-hidden relative group shadow-md">
+                <Image
+                  src={photo.src}
+                  alt={photo.alt || `Photo ${index + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 150px" // Adjusted sizes
+                  className="object-cover transition-transform duration-200 ease-in-out group-hover:scale-105"
+                />
+                {photo.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/75 to-transparent">
+                    <p className="text-white text-[10px] leading-tight line-clamp-2">{photo.caption}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (message.type === "resume" && message.resumeLink) {
+      return (
+        <div className={`${bubbleClass} px-4 py-3 ${currentBubbleMaxWidth} relative`}> {/* Slightly more padding for a button-like feel */}
+          {message.content && (
+            <p className="text-[14px] leading-tight mb-2.5">{message.content}</p>
+          )}
+          <a
+            href={message.resumeLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${isUser 
+              ? 'bg-white/20 text-white hover:bg-white/30 active:bg-white/40' 
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'} 
+              rounded-lg py-2.5 px-4 text-sm font-medium flex items-center justify-center mt-1.5 transition-all duration-200 group w-full sm:w-auto text-center shadow-md`}
+          >
+            {message.resumeLinkText || "View Resume"}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-2 opacity-80 group-hover:opacity-100 transition-opacity">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </a>
+        </div>
+      );
+    }
+
+    // Fallback for existing types (text, blog, project, cta, music with content)
     return (
       <div
-        className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}
+        className={`${bubbleClass} px-4 py-2 ${currentBubbleMaxWidth} relative`}
       >
         {message.type === "blog" && (
           <div className="space-y-2">
@@ -448,11 +509,11 @@ export default function MessageBubble(
           </div>
         )}
 
-        {message.type === "music" && (
+        {message.type === "music" && message.content && (
           <div className="space-y-2">
             <p className="text-[14px] leading-tight">{message.content}</p>
             <div className="overflow-hidden rounded-xl mt-1.5">
-              <SpotifyPlaylist />
+              <MusicPlaylist />
             </div>
           </div>
         )}
@@ -563,11 +624,10 @@ export default function MessageBubble(
             height={30}
             className="w-full h-full object-cover"
             priority
-            quality={100} // Added for higher quality
+            quality={100}
           />
         </div>
       )}
-
       {!isUser && !showAvatar && !hideThreadLine && (
         <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
       )}

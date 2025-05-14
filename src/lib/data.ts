@@ -54,7 +54,7 @@ export function generateInitialMessages(): MessageType[] {
     },
     {
       id: "5",
-      content: "Right now I am in Bhopal 📍",
+      content: "Right now I am in Haldia 📍",
       type: "text",
       sender: "assistant",
     },
@@ -63,8 +63,8 @@ export function generateInitialMessages(): MessageType[] {
       content: "",
       type: "location",
       location: {
-        name: "Bhopal",
-        city: "VIT Bhopal University",
+        name: "Haldia",
+        city: "Haldia,West Bengal",
        
       },
       sender: "assistant",

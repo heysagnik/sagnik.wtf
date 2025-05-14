@@ -154,27 +154,45 @@ export const MapWrapper = memo(({ position, locationName, locationCity }: MapWra
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
           box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+          background: rgba(255, 255, 255, 0.95);
         }
         .leaflet-popup-content {
           margin: 10px 14px;
           line-height: 1.4;
+          font-size: 14px;
+          color: #000;
+          text-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+        }
+        .leaflet-popup-content p {
+          margin: 4px 0;
+        }
+        .leaflet-popup-content .font-semibold {
+          font-weight: 600;
+          color: #000;
+        }
+        .leaflet-popup-content .text-gray-600 {
+          color: #333;
         }
       `}</style>
       <MapContainer
         center={position}
-        zoom={17}
+        zoom={13}
         zoomControl={false}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
-        attributionControl={false}
+        attributionControl={true}
         doubleClickZoom={false}
         placeholder={<div className="h-full w-full bg-gray-100 animate-pulse" />}
+        preferCanvas={true}
+        className="z-0"
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
+          detectRetina={true}
+          subdomains="abc"
         />
-        
         {customIcon && (
           <Marker position={position} icon={customIcon}>
             <Popup className="apple-maps-popup">

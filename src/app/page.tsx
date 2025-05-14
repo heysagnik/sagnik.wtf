@@ -10,7 +10,7 @@ import CompactHeader from "@/components/compact-header";
 import NewMessagesNotification from "@/components/new-messages-notification";
 import TypingIndicator from "@/components/typing-indicator";
 import type { MessageType, Location } from '@/lib/types';
-import SpotifyWidget, { type Track } from "@/components/spotify-widget";
+import { MusicPlaylist } from "@/components/music-widget";
 import MapWidget from "@/components/map-widget";
 
 // Animation timing constants (in ms)
@@ -315,6 +315,7 @@ export default function Home() {
 
   const handleMusicReady = useCallback(() => {
     if (!musicPreloadReady) {
+      console.log("All playlist audios in MusicPlaylist are processed.");
       setMusicPreloadReady(true);
     }
   }, [musicPreloadReady]);
@@ -325,23 +326,9 @@ export default function Home() {
     }
   }, [mapPreloadReady]);
 
-  // Define a track to preload. Ensure audioPreviewUrl points to a valid file in /public
-  const firstTrackForPreload: Track | undefined = {
-      id: "preload-track-1",
-      title: "Preload Track",
-      artist: "System",
-      coverArt: "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36", // Example cover art
-      duration: 30, // Example duration
-      spotifyUrl: "https://open.spotify.com", // Placeholder
-      audioPreviewUrl: "/1.mp3" // IMPORTANT: Replace with a valid path to an MP3 in your /public folder
-  };
-
-  // Define a default location for map preloading
   const defaultLocationForPreload: Location = {
-      name: "Central Park", // Example location
-      city: "New York",
-      // Optionally provide coordinates directly to avoid a Nominatim lookup during preload:
-      // coordinates: { lat: 40.7829, lng: -73.9654 } 
+      name: "Haldia", 
+      city: "Haldia, West Bengal",
   };
 
   return (
@@ -349,13 +336,8 @@ export default function Home() {
       {/* Render hidden widgets for preloading */}
       {showBootScreen && (
         <div style={{ display: 'none' }}>
-          {firstTrackForPreload && (
-            <SpotifyWidget
-              track={firstTrackForPreload}
-              onAudioReady={handleMusicReady}
-              autoplay={false} // Important: Do not autoplay during boot screen
-            />
-          )}
+          <MusicPlaylist onAllAudiosProcessed={handleMusicReady} />
+          
           {defaultLocationForPreload && (
             <MapWidget
               location={defaultLocationForPreload}
