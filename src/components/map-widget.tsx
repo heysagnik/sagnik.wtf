@@ -1,197 +1,284 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import dynamic from "next/dynamic"
-import "leaflet/dist/leaflet.css"
-import type { Location } from "@/lib/types"
+import { memo, useEffect, useState, useRef, useCallback } from "react";
+import Image from "next/image";
 
-const locationCache = new Map<string, {lat: number, lng: number}>();
+// --- Constants for Animation & Layout --- 
+const PLANE_OFFSCREEN_OFFSET = 50; // How far off-screen the plane starts/ends
+const PLANE_FLIGHT_DURATION_MIN = 8000; // ms
+const PLANE_FLIGHT_DURATION_MAX = 12000; // ms
+const PLANE_OPACITY_TRANSITION_POINT = 0.2; // 20% of flight for fade in/out
+const PLANE_SHADOW_OFFSET_X = -5;
+const PLANE_SHADOW_OFFSET_Y = 10;
+const PLANE_DEFAULT_SCALE = 0.9;
+const PLANE_SHADOW_DEFAULT_SCALE = 0.8;
 
-const MapWrapper = dynamic(() => import("./map-components").then(mod => mod.MapWrapper), {
-  ssr: false,
-  loading: () => <MapPlaceholder isLoading={true} />
-});
+interface MapWrapperProps {
+  locationCity: string;
+  className?: string;
+}
 
-function MapPlaceholder({ isLoading = true, error = false }: { isLoading?: boolean, error?: boolean }) {
+interface FlightParams {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  rotation: number;
+  duration: number;
+  startTime: number;
+  peakOpacity: number;
+}
+
+const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
+  const [planeState, setPlaneState] = useState({
+    x: -PLANE_OFFSCREEN_OFFSET,
+    y: 100, // Initial Y, will be updated once dimensions are known
+    rotation: 0,
+    shadowX: -PLANE_OFFSCREEN_OFFSET,
+    shadowY: 115, // Initial Y for shadow
+    shadowRotation: 0,
+    opacity: 0,
+  });
+
+  const animationFrameId = useRef<number | null>(null);
+  const currentFlight = useRef<FlightParams | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [mapDimensions, setMapDimensions] = useState({ width: 300, height: 252 }); // Default/initial
+
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setMapDimensions({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    resizeObserver.observe(container);
+    // Initial set
+    setMapDimensions({
+      width: container.offsetWidth,
+      height: container.offsetHeight,
+    });
+    return () => resizeObserver.unobserve(container);
+  }, []);
+
+  const generateRandomRoute = useCallback(() => {
+    const { width: mapWidth, height: mapHeight } = mapDimensions;
+    if (mapWidth === 0 || mapHeight === 0) return; // Avoid division by zero if dimensions not ready
+
+    const startEdge = Math.floor(Math.random() * 4);
+    let sx, sy;
+
+    if (startEdge === 0) { // Top
+      sx = Math.random() * mapWidth;
+      sy = -PLANE_OFFSCREEN_OFFSET;
+    } else if (startEdge === 1) { // Right
+      sx = mapWidth + PLANE_OFFSCREEN_OFFSET;
+      sy = Math.random() * mapHeight;
+    } else if (startEdge === 2) { // Bottom
+      sx = Math.random() * mapWidth;
+      sy = mapHeight + PLANE_OFFSCREEN_OFFSET;
+    } else { // Left (default)
+      sx = -PLANE_OFFSCREEN_OFFSET;
+      sy = Math.random() * mapHeight;
+    }
+
+    // Aim towards a general area in the center, or slightly off-center
+    const targetX = mapWidth / 2 + (Math.random() * (mapWidth / 3) - (mapWidth / 6));
+    const targetY = mapHeight / 2 + (Math.random() * (mapHeight / 3) - (mapHeight / 6));
+
+    const dxToTarget = targetX - sx;
+    const dyToTarget = targetY - sy;
+    
+    // Extend endX, endY to ensure plane flies past the target and off-screen
+    const endX = targetX + dxToTarget * 1.5; // Fly further beyond the target
+    const endY = targetY + dyToTarget * 1.5;
+
+    const angleToTarget = Math.atan2(dyToTarget, dxToTarget) * (180 / Math.PI);
+    const finalRotation = angleToTarget + 90; // Plane image points North (0deg is up)
+    
+    const duration = PLANE_FLIGHT_DURATION_MIN + Math.random() * (PLANE_FLIGHT_DURATION_MAX - PLANE_FLIGHT_DURATION_MIN);
+
+    currentFlight.current = {
+      startX: sx,
+      startY: sy,
+      endX: endX,
+      endY: endY,
+      rotation: finalRotation,
+      duration,
+      startTime: performance.now(),
+      peakOpacity: 1,
+    };
+    
+    setPlaneState(prevState => ({ 
+      ...prevState, // Preserve other potential state parts if any
+      x: sx, y: sy, rotation: finalRotation, 
+      shadowX: sx + PLANE_SHADOW_OFFSET_X, 
+      shadowY: sy + PLANE_SHADOW_OFFSET_Y, 
+      shadowRotation: finalRotation,
+      opacity: 0
+    }));
+  }, [mapDimensions]);
+
+  useEffect(() => {
+    // Start first flight only when map dimensions are known
+    if (mapDimensions.width > 0 && mapDimensions.height > 0 && !currentFlight.current) {
+      generateRandomRoute();
+    }
+  }, [mapDimensions, generateRandomRoute]);
+
+  useEffect(() => {
+    const animatePlane = (timestamp: number) => {
+      if (!currentFlight.current || mapDimensions.width === 0) {
+        // If no flight or map dimensions not ready, request next frame and wait
+        animationFrameId.current = requestAnimationFrame(animatePlane);
+        return;
+      }
+
+      const flight = currentFlight.current;
+      const elapsed = timestamp - flight.startTime;
+      const progress = elapsed / flight.duration;
+
+      if (progress >= 1) {
+        generateRandomRoute(); // Start a new flight
+        animationFrameId.current = requestAnimationFrame(animatePlane);
+        return;
+      }
+      
+      let currentOpacity;
+      if (progress < PLANE_OPACITY_TRANSITION_POINT) { 
+        currentOpacity = (progress / PLANE_OPACITY_TRANSITION_POINT) * flight.peakOpacity;
+      } else if (progress > (1 - PLANE_OPACITY_TRANSITION_POINT)) { 
+        currentOpacity = ((1 - progress) / PLANE_OPACITY_TRANSITION_POINT) * flight.peakOpacity;
+            } else {
+        currentOpacity = flight.peakOpacity;
+      }
+      currentOpacity = Math.max(0, Math.min(flight.peakOpacity, currentOpacity));
+
+      const newX = flight.startX + (flight.endX - flight.startX) * progress;
+      const newY = flight.startY + (flight.endY - flight.startY) * progress;
+      
+      setPlaneState({
+        x: newX,
+        y: newY,
+        rotation: flight.rotation, 
+        shadowX: newX + PLANE_SHADOW_OFFSET_X,
+        shadowY: newY + PLANE_SHADOW_OFFSET_Y,
+        shadowRotation: flight.rotation,
+        opacity: currentOpacity,
+      });
+
+      animationFrameId.current = requestAnimationFrame(animatePlane);
+    };
+
+    animationFrameId.current = requestAnimationFrame(animatePlane);
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+  }, [generateRandomRoute, mapDimensions]); // Add mapDimensions as dependency
+
   return (
-    <div className="h-full w-full flex items-center justify-center bg-gray-50">
-      <div className="flex flex-col items-center">
-        {isLoading ? (
-          <>
-            <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-2"></div>
-            <p className="text-sm text-gray-500">Loading map...</p>
-          </>
-        ) : error ? (
-          <>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 mb-2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <p className="text-sm text-gray-500">Location not found</p>
-          </>
-        ) : null}
+    // Assign ref to this div for dimension measurement
+    <div ref={mapContainerRef} className={`relative w-full h-full overflow-hidden ${className}`}>
+      <Image
+        src="/cloud.webp"
+        width={390} height={347}
+        alt="Cloud decorative element" draggable="false"
+        className="absolute top-0 left-0 w-full h-auto cloud-animation opacity-60 blur-sm z-[1] pointer-events-none"
+      />
+      <div className="relative w-full h-full z-[2]">
+        <Image
+          src="/plane.webp"
+          width={28} height={60}
+          alt="Plane decorative element" draggable="false"
+          className="absolute z-[4] pointer-events-none transition-opacity duration-100"
+          style={{
+            transform: `translate(${planeState.x}px, ${planeState.y}px) rotate(${planeState.rotation}deg) scale(${PLANE_DEFAULT_SCALE})`,
+            opacity: planeState.opacity,
+            willChange: 'transform, opacity',
+          }}
+        />
+        <Image
+          src="/plane-shadow.webp"
+          width={28} height={28}
+          alt="Plane shadow decorative element" draggable="false"
+          className="absolute z-[3] pointer-events-none transition-opacity duration-100"
+           style={{ 
+            transform: `translate(${planeState.shadowX}px, ${planeState.shadowY}px) rotate(${planeState.shadowRotation}deg) skewX(-15deg) scale(${PLANE_SHADOW_DEFAULT_SCALE})`,
+            opacity: planeState.opacity * 0.5,
+            filter: 'blur(1.5px)',
+            willChange: 'transform, opacity',
+          }}
+        />
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <Image
+            src="/map-haldia.png"
+            alt={`Map showing ${locationCity}`}
+            fill
+            className="object-cover scale-200 -translate-x-10 -translate-y-8"
+            priority
+          />
+      </div>
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/5 via-black/5 to-transparent z-[5] pointer-events-none"></div>
+        <div className="absolute left-1/2 top-[70%] transform -translate-x-1/2 -translate-y-1/2 z-10">
+          <span className="relative flex h-6 w-6">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60"></span>
+            <span className="relative inline-flex rounded-full h-6 w-6 bg-blue-500 border-2 border-white"></span>
+            </span>
+        </div>
+        <div className="absolute bottom-3 left-3 flex items-center space-x-1.5 bg-white/80 backdrop-blur-sm text-gray-700 px-3 py-1.5 rounded-lg shadow-md z-20">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className="text-red-600"
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="currentColor"></path>
+            <circle cx="12" cy="10" r="5" fill="white"></circle>
+          </svg>
+          <span className="text-xs font-medium">{locationCity}</span>
+        </div>
       </div>
     </div>
   );
-}
+});
 
-async function fetchLocationCoordinates(searchTerm: string) {
-  const cacheKey = searchTerm.toLowerCase();
-  if (locationCache.has(cacheKey)) {
-    return locationCache.get(cacheKey);
-  }
+MapInner.displayName = "MapInner";
 
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        searchTerm
-      )}&format=json&limit=1`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch location: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    if (data && data[0]) {
-      const { lat, lon } = data[0];
-      const coords = { lat: parseFloat(lat), lng: parseFloat(lon) };
-      locationCache.set(cacheKey, coords);
-      return coords;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error fetching location coordinates:", error);
-    return null;
-  }
-}
-
-export default function MapWidget({ 
-  location,
-  onMapReady
-}: { 
-  location: Location,
-  onMapReady?: () => void
-}) {
-  const [position, setPosition] = useState<[number, number] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
+export default function MapWidget({ locationCity }: { locationCity: string }) {
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    let isMounted = true;
-
-    const initializeLocation = async () => {
-      if (!isMounted) return;
-      setIsLoading(true);
-      setHasError(false);
-      setPosition(null);
-
-      let localPosition: [number, number] | null = null;
-      let localError = false;
-
-      try {
-        if (location.coordinates) {
-          const { lat, lng } = location.coordinates;
-          localPosition = [lat, lng];
-        } else if (location.city || location.name) {
-          const searchTerm = location.city || location.name;
-          if (searchTerm) {
-            const coords = await fetchLocationCoordinates(searchTerm);
-            if (coords) {
-              localPosition = [coords.lat, coords.lng];
-            } else {
-              localError = true;
-            }
-          } else {
-            localError = true;
-          }
-        } else {
-          localError = true;
-        }
-      } catch (error) {
-        console.error("Error initializing location:", error);
-        localError = true;
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-          setHasError(localError);
-          setPosition(localPosition);
-          if (localPosition && !localError && onMapReady) {
-            onMapReady();
-          }
-        }
-      }
-    };
-
-    initializeLocation();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [location, onMapReady]);
-
-  const openDirections = useCallback(() => {
-    if (!position) return;
-    
-    const destination = location.name || location.city || `${position[0]},${position[1]}`;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, [position, location]);
+    const timer = setTimeout(() => setVisible(true), 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="mt-2 rounded-xl overflow-hidden shadow-md relative" style={{ height: "252px" }}>
-      <link rel="preconnect" href="https://tile.openstreetmap.org" />
-      
-      <div className="absolute inset-0 z-5 pointer-events-none shadow-inner rounded-2xl" 
-           style={{ 
-             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.1)",
-             background: "linear-gradient(to bottom, transparent 90%, rgba(0,0,0,0.05))"
-           }}>
-      </div>
-
-      <div className="absolute bottom-0 left-0 right-0 z-[1000]">
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
-        
-        <div className="bg-white/85 backdrop-blur-md px-1 py-1 border-t border-white/30 shadow-sm">
-          <button 
-            onClick={openDirections}
-            disabled={!position}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl py-2.5 flex items-center justify-center shadow-md transition-all hover:shadow-lg hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] relative overflow-hidden disabled:opacity-50 disabled:pointer-events-none"
-            aria-label={`Get directions to ${location.name || location.city || 'this location'}`}
-          >
-            <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></span>
-            <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent opacity-50"></span>
-            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"></span>
-            
-            <span className="flex items-center justify-center relative">
-              <div className="mr-2 bg-white/30 backdrop-blur-sm p-1 rounded-full shadow-inner">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256">
-                <g transform="scale(-1,1) translate(-256,0)">
-                  <rect width="256" height="256" fill="none"/>
-                  <path d="M152,152,234.35,129a8,8,0,0,0,.27-15.21l-176-65.28A8,8,0,0,0,48.46,58.63l65.28,176a8,8,0,0,0,15.21-.27Z" fill="#ffffff" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="16"/>
-                </g>
-              </svg></div>
-              <span className="font-medium tracking-wide text-sm">Directions</span>
-            </span>
-          </button>
-        </div>
-      </div>
-      
-      {position ? (
-        <MapWrapper 
-          position={position}
-          locationName={location.name}
-          locationCity={location.city}
-        />
-      ) : (
-        <MapPlaceholder isLoading={isLoading} error={hasError} />
-      )}
-      
-      <div className="absolute top-0 left-0 z-[999] w-4 h-4 bg-gradient-radial from-white/30 to-transparent pointer-events-none rounded-tl-2xl"></div>
-      <div className="absolute top-0 right-0 z-[999] w-4 h-4 bg-gradient-radial from-white/30 to-transparent pointer-events-none rounded-tr-2xl"></div>
+    <div
+      className={`rounded-xl overflow-hidden shadow-lg bg-gray-100 h-[252px] transition-opacity duration-500 ease-out ${visible ? 'opacity-100 intro-animation-active' : 'opacity-0'}`}
+    >
+      <style jsx global>{`
+        @keyframes intro-swoop { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .intro-animation-active { animation: intro-swoop 0.5s ease-out forwards; }
+        @keyframes cloud-drift { 
+          0% { transform: translateX(-80%) translateY(-10%); opacity: 0.4; } 
+          50% { opacity: 0.7; } 
+          100% { transform: translateX(20%) translateY(10%); opacity: 0.4; } 
+        }
+        .cloud-animation { animation: cloud-drift 70s linear infinite alternate; }
+      `}</style>
+      <MapInner locationCity={locationCity} />
     </div>
   );
 }

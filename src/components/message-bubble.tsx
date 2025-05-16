@@ -10,9 +10,8 @@ import { Drawer } from 'vaul';
 
 interface MessageBubbleProps {
   message: MessageType
-  showAvatar?: boolean
-  hideThreadLine?: boolean | null
   noTail?: boolean | null
+  isTailEndMessage?: boolean // New prop
 }
 
 interface BlogItemType {
@@ -119,10 +118,12 @@ ShimmerEffect.displayName = "ShimmerEffect";
 const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
+  // Mouse handling code remains unchanged
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || isTransitioning) return;
     
     // Get the card's position and dimensions
     const rect = cardRef.current.getBoundingClientRect();
@@ -136,30 +137,55 @@ const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
     const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 10;
     
     setRotation({ x: rotateX, y: rotateY });
-  }, []);
+  }, [isTransitioning]);
   
-  const handleMouseEnter = () => setIsHovering(true);
+  const handleMouseEnter = () => !isTransitioning && setIsHovering(true);
   const handleMouseLeave = () => {
-    setIsHovering(false);
-    setRotation({ x: 0, y: 0 });
+    if (!isTransitioning) {
+      setIsHovering(false);
+      setRotation({ x: 0, y: 0 });
+    }
   };
 
+  const handleBlogClick = useCallback(() => {
+    if (blog.link && !isTransitioning) {
+      setIsTransitioning(true);
+      
+      // Prepare URL with the 'from' parameter
+      const separator = blog.link.includes('?') ? '&' : '?';
+      const linkWithParam = `${blog.link}${separator}from=home`;
+      
+      // Add transition class to body to handle page-level animation
+      document.body.classList.add('page-transitioning');
+      
+      // Navigate after the zoom animation completes
+      setTimeout(() => {
+        window.location.href = linkWithParam;
+      }, 400); // Match this with the CSS transition duration
+    }
+  }, [blog.link, isTransitioning]);
+
   return (
-    <div
+    <motion.div
       ref={cardRef}
       className={`
         group relative
         ${blog.link ? 'cursor-pointer' : ''}
         [perspective:800px]
       `}
-      onClick={() => {
-        if (blog.link) {
-          window.open(blog.link, "_blank", "noopener,noreferrer");
-        }
-      }}
+      onClick={handleBlogClick}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      animate={{
+        scale: isTransitioning ? 1.2 : 1,
+        opacity: isTransitioning ? 0 : 1,
+        zIndex: isTransitioning ? 50 : 'auto',
+      }}
+      transition={{
+        scale: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
+        opacity: { duration: 0.3, delay: 0.1 }
+      }}
     >
       <div
         className={`
@@ -170,7 +196,7 @@ const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
           [transform-style:preserve-3d]
         `}
         style={{
-          transform: isHovering 
+          transform: isHovering && !isTransitioning
             ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.05)` 
             : 'rotateX(0deg) rotateY(0deg) scale(1)',
           transition: isHovering ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out'
@@ -179,7 +205,7 @@ const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
         <div 
           className="relative transition-transform duration-300 ease-out"
           style={{
-            transform: isHovering ? 'translateZ(20px)' : 'translateZ(0)'
+            transform: isHovering && !isTransitioning ? 'translateZ(20px)' : 'translateZ(0)'
           }}
         >
           <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
@@ -190,7 +216,7 @@ const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
           </p>
         </div>
 
-        {blog.link && (
+        {blog.link && !isTransitioning && (
           <div
             className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
                      p-1 rounded-full group-hover:bg-slate-600/50
@@ -206,7 +232,7 @@ const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 });
 
@@ -434,16 +460,40 @@ const messageBubbleStyles = `
 `;
 
 export default function MessageBubble(
-  { message, showAvatar = true, hideThreadLine, noTail }: MessageBubbleProps
+  { message, noTail, isTailEndMessage = true }: MessageBubbleProps
 ) {
   const [isVisible, setIsVisible] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const isUser = message.sender === "user";
 
+  // State for managing the initial avatar flash for non-tail-end messages
+  const [isFlashingAvatar, setIsFlashingAvatar] = useState(false);
+  const [hasFlashedOnce, setHasFlashedOnce] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    // Logic for the avatar flash effect
+    if (isVisible && !isUser && !isTailEndMessage && !hasFlashedOnce) {
+      // If the bubble is visible, it's an assistant message,
+      // it's NOT a tail-end message, and it hasn't flashed yet:
+      setIsFlashingAvatar(true);
+      setHasFlashedOnce(true); // Ensure it only flashes once on initial appearance
+
+      const flashTimer = setTimeout(() => {
+        setIsFlashingAvatar(false);
+      }, 200); // Duration of the avatar flash (e.g., 200ms)
+
+      return () => clearTimeout(flashTimer);
+    } else if (isVisible && (isUser || isTailEndMessage)) {
+      // If it's a user message or a tail-end assistant message,
+      // ensure flashing state is off.
+      setIsFlashingAvatar(false);
+    }
+  }, [isVisible, isUser, isTailEndMessage, hasFlashedOnce]);
 
   const handleMediaLoad = useCallback(() => {
     setMediaLoaded(true);
@@ -456,20 +506,17 @@ export default function MessageBubble(
   let currentBubbleMaxWidth = "max-w-[85%]"; // Default
   if (message.type === "project") {
     currentBubbleMaxWidth = "max-w-[250px] sm:max-w-[280px]";
-  } else if (message.type === "music") { // Covers both music with and without content for max-width
+  } else if (message.type === "music") { 
     currentBubbleMaxWidth = "max-w-[300px] sm:max-w-[320px]";
   } else if (message.type === "location") {
     currentBubbleMaxWidth = "max-w-[200px] sm:max-w-[240px]";
   }
-  // Add specific max-width for photos or resume if needed, e.g.:
-  // else if (message.type === "photos") { currentBubbleMaxWidth = "max-w-lg"; }
-
 
   const renderContent = () => {
     if (message.type === "location") {
       return (
         <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[200px] sm:max-w-[240px]">
-          {message.location && <MapWidget location={message.location} />}
+          {message.location &&  <MapWidget locationCity="Haldia, West Bengal" />}
         </div>
       );
     }
@@ -651,7 +698,11 @@ export default function MessageBubble(
     );
   };
 
-  const gapClass = hideThreadLine ? "gap-1" : "gap-2";
+  // Determine if the avatar should be shown based on tail-end status or flashing state
+  const shouldShowAvatar = !isUser && (isTailEndMessage || isFlashingAvatar);
+
+  // Gap class remains based on the final state (isTailEndMessage) for layout stability
+  const gapClass = isTailEndMessage ? "gap-2" : "gap-1";
 
   return (
     <motion.div
@@ -660,7 +711,7 @@ export default function MessageBubble(
       animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 8, scale: isVisible ? 1 : 0.98 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      {!isUser && showAvatar && !hideThreadLine && (
+      {!isUser && shouldShowAvatar && ( // Use the new condition here
         <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 mb-0.5 border border-white/10 shadow-sm">
           <Image
             src="/char.png"
@@ -673,15 +724,14 @@ export default function MessageBubble(
           />
         </div>
       )}
-      {!isUser && !showAvatar && !hideThreadLine && (
-        <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
-      )}
+      {/* If !isUser and !shouldShowAvatar, no avatar or placeholder is rendered */}
 
       <div className={`flex-1 flex ${isUser ? "justify-end" : "justify-start"}`}>
         {renderContent()}
       </div>
 
-      {isUser && !hideThreadLine && (
+      {/* Spacer for user messages remains based on isTailEndMessage for final alignment */}
+      {isUser && isTailEndMessage && (
         <div className="w-6 h-6 flex-shrink-0 mb-0.5"></div>
       )}
       

@@ -82,7 +82,7 @@ export type MessageType =
       id: string;
       content?: string;
       type: "location";
-      location: { name: string; city: string; mapLink?: string };
+      location: { city: string; mapLink?: string };
       sender: "user" | "assistant";
       timestamp?: string | number;
       blogs?: never;

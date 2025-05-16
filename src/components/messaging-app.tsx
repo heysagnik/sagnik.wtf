@@ -24,8 +24,19 @@ const UI_DELAYS = {
   TYPING_INDICATOR_ANIMATION_MS: 100, // Duration for typing indicator fade in/out
 };
 
-export default function MessagingApp() {
+export default function MessagingApp({ skipIntroAnimation = false }) {
   const { messages, isTyping: isApiTyping, addMessage } = useMessages();
+  
+  const initialVisible = skipIntroAnimation ? messages : [];
+  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>(initialVisible);
+  
+  const [isGraduallyTyping, setIsGraduallyTyping] = useState(() => {
+    const initialTyping = !skipIntroAnimation;
+    return initialTyping;
+  });
+  
+  const prevProcessedMessagesLength = useRef(0);
+
   const {
     containerRef,
     isScrolledUp,
@@ -34,28 +45,26 @@ export default function MessagingApp() {
     autoScrollOnNewContent,
   } = useScrollBehavior();
 
-  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>([]);
-  const [isGraduallyTyping, setIsGraduallyTyping] = useState(false);
-  const prevProcessedMessagesLength = useRef(0); // Tracks messages processed for gradual display
-
   const [isTimestampVisible, setIsTimestampVisible] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
 
-  const isTyping = isApiTyping || isGraduallyTyping;
+  const calculatedIsTyping = skipIntroAnimation ? false : (isApiTyping || isGraduallyTyping);
+  const isTyping = calculatedIsTyping;
 
-  // Effect for gradually revealing new messages
   useEffect(() => {
-    // Only run if there are messages and new messages have arrived
+    if (skipIntroAnimation) {
+      setIsGraduallyTyping(false);
+    }
+  }, [skipIntroAnimation]);
+
+  useEffect(() => {
     if (messages.length === 0 || messages.length <= prevProcessedMessagesLength.current) {
       return;
     }
 
-    // Get the next message to reveal (oldest message not yet in visibleMessages)
     const nextMessageToReveal = messages[visibleMessages.length];
 
     if (!nextMessageToReveal) {
-      // All messages currently in `messages` array are already visible or being processed
-      // Update prevProcessedMessagesLength to current messages length if it fell behind
       if (prevProcessedMessagesLength.current < messages.length) {
         prevProcessedMessagesLength.current = messages.length;
       }
@@ -75,13 +84,20 @@ export default function MessagingApp() {
 
     const timer = setTimeout(() => {
       setIsGraduallyTyping(false);
-      setVisibleMessages((current) => [...current, nextMessageToReveal]);
-      // Mark that this message from the source `messages` array has been processed for display
-      prevProcessedMessagesLength.current = visibleMessages.length + 1;
+      setVisibleMessages((current) => {
+        const newVisible = [...current, nextMessageToReveal];
+        prevProcessedMessagesLength.current = newVisible.length; 
+        return newVisible;
+      });
     }, typingDelay);
 
-    return () => clearTimeout(timer);
-  }, [messages, visibleMessages]); // Reruns when new messages arrive or a message becomes visible
+    return () => {
+      clearTimeout(timer);
+    }
+  }, [messages, visibleMessages, skipIntroAnimation]);
+  
+  useEffect(() => {
+  }, [visibleMessages, skipIntroAnimation]);
 
   const handleTimestampVisibilityChange = useCallback((isVisible: boolean) => {
     setTimeout(() => {
@@ -96,19 +112,15 @@ export default function MessagingApp() {
     setNewMessageCount(0);
   }, [scrollToBottom]);
 
-  // Effect to update new message count when scrolled up
   useEffect(() => {
     if (isScrolledUp && messages.length > 0) {
       const currentNewMessageCount = newMessageCount;
-      // Increment if new messages have arrived (messages.length increased)
-      // This counts distinct "new message arrival events" while scrolled up.
       if (currentNewMessageCount < messages.length) {
         setNewMessageCount(currentNewMessageCount + 1);
       }
     }
   }, [isScrolledUp, messages.length, newMessageCount]);
 
-  // Effect for auto-scrolling when new content (messages or typing indicator) appears
   useEffect(() => {
     autoScrollOnNewContent();
   }, [visibleMessages, isTyping, autoScrollOnNewContent]);
@@ -116,9 +128,8 @@ export default function MessagingApp() {
   const handleSendMessage = useCallback(
     (content: string) => {
       addMessage(content);
-      // Delay scroll to allow DOM update and message to appear
       setTimeout(scrollToBottom, UI_DELAYS.SCROLL_TO_BOTTOM_MS);
-      setNewMessageCount(0); // Reset new message count on send
+      setNewMessageCount(0);
     },
     [addMessage, scrollToBottom]
   );
@@ -146,11 +157,12 @@ export default function MessagingApp() {
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain flex flex-col scrollbar-hide px-3"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         <MessageList
           messages={visibleMessages}
           onTimestampVisibilityChange={handleTimestampVisibilityChange}
+          skipAnimation={skipIntroAnimation}
         />
         <div className="h-4"></div> {/* Spacer at the bottom of the list */}
       </div>
@@ -162,16 +174,14 @@ export default function MessagingApp() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
-            transition={{ duration: UI_DELAYS.TYPING_INDICATOR_ANIMATION_MS / 1000 }} // Framer motion uses seconds
+            transition={{ duration: UI_DELAYS.TYPING_INDICATOR_ANIMATION_MS / 1000 }}
           >
             <TypingIndicator showAvatar />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Message Input Area */}
       <div className="bg-black/95 backdrop-blur-sm w-full flex-shrink-0 border-t border-white/5">
-        {/* Subtle top border highlight */}
         <div className="absolute top-[-1px] inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
         <MessageInput onSend={handleSendMessage} isEnabled />
       </div>

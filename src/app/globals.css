@@ -166,3 +166,22 @@
 .animate-shimmer {
   animation: shimmer 1.5s infinite linear;
 }
+
+.page-transitioning {
+  overflow: hidden;
+}
+
+.page-transitioning::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
