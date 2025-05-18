@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import BootScreen from "@/components/boot-screen";
+import SplashScreen from "@/components/splash-screen";
 import MessagingApp from "@/components/messaging-app";
 
 // Animation timing constants (in ms)
@@ -13,11 +13,10 @@ const ANIMATION = {
 
 export default function HomePageContent() {
   const searchParams = useSearchParams();
-  const [showBootScreen, setShowBootScreen] = useState(true);
-  const [fadeOutBootScreen, setFadeOutBootScreen] = useState(false);
-  const bootScreenTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [showSplashScreen, setShowSplashScreen] = useState(true);
+  const [fadeSplashScreen, setFadeSplashScreen] = useState(false);
+  const splashScreenTimerRef = useRef<NodeJS.Timeout | null>(null);
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [charImageLoaded, setCharImageLoaded] = useState(false);
   const [skipIntroAnimation, setSkipIntroAnimation] = useState(false);
 
   // Check if user is navigating within the same domain based on query parameter
@@ -25,80 +24,34 @@ export default function HomePageContent() {
     const fromParam = searchParams.get('from');
     
     if (fromParam === 'home' || fromParam === 'blog') {
-      setShowBootScreen(false);
+      setShowSplashScreen(false);
       setSkipIntroAnimation(true);
       console.log("Skipping animations due to navigation from within site, fromParam:", fromParam);
     }
   }, [searchParams]);
   
-  // Handle character image preloading
+  // Transition from splash screen to messaging app
   useEffect(() => {
-    let charLoaded = false;
-    let mapLoaded = false;
-    
-    const charImg = new window.Image();
-    charImg.src = "/char.png";
-    charImg.onload = () => {
-      console.log("Character image loaded");
-      if (mapLoaded) {
-        setCharImageLoaded(true);
-      } else {
-        charLoaded = true;
-      }
-    };
-    charImg.onerror = (error) => {
-      console.error("Failed to load character image:", error);
-      if (mapLoaded) {
-        setCharImageLoaded(true);
-      } else {
-        charLoaded = true;
-      }
-    };
-    
-    const mapImg = new window.Image();
-    mapImg.src = "/map-haldia.webp";
-    mapImg.onload = () => {
-      console.log("Map image loaded");
-      if (charLoaded) {
-        setCharImageLoaded(true);
-      } else {
-        mapLoaded = true;
-      }
-    };
-    mapImg.onerror = (error) => {
-      console.error("Failed to load map image:", error);
-      if (charLoaded) {
-        setCharImageLoaded(true);
-      } else {
-        mapLoaded = true;
-      }
-    };
-  }, []);
-
-  // Transition from boot screen to messaging app
-  useEffect(() => {
-    if (showBootScreen && !fadeOutBootScreen) {
-      if (charImageLoaded) {
-        console.log("Character loaded, proceeding with boot sequence");
-        
-        bootScreenTimerRef.current = setTimeout(() => {
-          console.log("Starting fade out animation");
-          setFadeOutBootScreen(true);
-        }, 2000); // Time to display boot screen after resources are loaded
-      }
+    if (showSplashScreen && !fadeSplashScreen) {
+      console.log("Starting splash screen sequence");
+      splashScreenTimerRef.current = setTimeout(() => {
+        console.log("Starting fade out animation");
+        setFadeSplashScreen(true);
+      }, 2000); // Time to display splash screen
     }
+    
     return () => {
-      if (bootScreenTimerRef.current) {
-        clearTimeout(bootScreenTimerRef.current);
-        bootScreenTimerRef.current = null;
+      if (splashScreenTimerRef.current) {
+        clearTimeout(splashScreenTimerRef.current);
+        splashScreenTimerRef.current = null;
       }
     };
-  }, [showBootScreen, fadeOutBootScreen, charImageLoaded]);
+  }, [showSplashScreen, fadeSplashScreen]);
 
   useEffect(() => {
-    if (fadeOutBootScreen && !transitionTimerRef.current) {
+    if (fadeSplashScreen && !transitionTimerRef.current) {
       transitionTimerRef.current = setTimeout(() => {
-        setShowBootScreen(false);
+        setShowSplashScreen(false);
       }, ANIMATION.FINAL_TRANSITION);
     }
     
@@ -108,15 +61,13 @@ export default function HomePageContent() {
         transitionTimerRef.current = null;
       }
     };
-  }, [fadeOutBootScreen]);
+  }, [fadeSplashScreen]);
 
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">
       <div className="w-full max-w-[500px] h-full">
-        {showBootScreen ? (
-          <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOutBootScreen ? 'opacity-0' : 'opacity-100'}`}>
-            <BootScreen />
-          </div>
+        {showSplashScreen ? (
+          <SplashScreen />
         ) : (
           <MessagingApp skipIntroAnimation={skipIntroAnimation} />
         )}

@@ -66,7 +66,7 @@ const Header = memo(({ onTimestampVisibilityChange }: HeaderProps) => {
                 <p className="text-white/60 text-xs sm:text-sm mb-1">@heysagnik</p>
                 
                 <p className="text-white/80 text-xs sm:text-sm text-center max-w-xs mb-2 px-4">
-                    Product designer & developer. Always curious.
+                    Product developer. Always curious.
                 </p>
                                 
                 <div className="flex items-center flex-wrap justify-center gap-1 text-white/50 text-xs px-2">
