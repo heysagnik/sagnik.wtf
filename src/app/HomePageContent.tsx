@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import BootScreen from "@/components/boot-screen";
 import MessagingApp from "@/components/messaging-app";
-import { MusicPlaylist } from "@/components/music-widget";
 
 // Animation timing constants (in ms)
 const ANIMATION = {
@@ -18,7 +17,6 @@ export default function HomePageContent() { // Renamed from Home
   const [fadeOutBootScreen, setFadeOutBootScreen] = useState(false);
   const bootScreenTimerRef = useRef<NodeJS.Timeout | null>(null);
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [musicPreloadReady, setMusicPreloadReady] = useState(false);
   const [charImageLoaded, setCharImageLoaded] = useState(false);
   const [skipIntroAnimation, setSkipIntroAnimation] = useState(false);
 
@@ -48,11 +46,7 @@ export default function HomePageContent() { // Renamed from Home
     };
   }, []);
 
-  // Handle preloaded resources
-  const handleMusicReady = () => {
-    console.log("Music preload ready");
-    setMusicPreloadReady(true);
-  };
+
 
 
 
