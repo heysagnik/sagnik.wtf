@@ -192,24 +192,48 @@ function useAudioPlayer(
       setError("No audio available");
       return;
     }
+    
+    // If not initialized or ready yet, initialize audio
     if (!audioRef.current || !isReady) {
-        if(audioRef.current) {
-            setIsLoading(true);
-            audioRef.current.play().catch(err => {
-                setIsLoading(false);
-                setError("Playback initiation failed.");
-                console.error("Toggle Play (not ready) Error:", err);
-            });
-        } else {
-            setError("Audio element not initialized.");
-        }
-        return;
+      setIsLoading(true);
+      
+      // Create and setup new audio element
+      const audioUrl = track.audioPreviewUrl.startsWith("http")
+        ? track.audioPreviewUrl
+        : `${window.location.origin}${track.audioPreviewUrl}`;
+      
+      const newAudio = new Audio(audioUrl);
+      audioRef.current = newAudio;
+      
+      // Setup event handlers
+      newAudio.addEventListener("canplaythrough", () => {
+        setIsLoading(false);
+        setIsReady(true);
+        if (onAudioReady) onAudioReady();
+        newAudio.play().catch(err => {
+          console.error("Error playing audio:", err);
+          setError("Playback failed");
+          setIsPlaying(false);
+        });
+      });
+      
+      newAudio.addEventListener("error", (e) => {
+        setIsLoading(false);
+        setError("Failed to load audio");
+        console.error("Audio load error:", e);
+      });
+      
+      // Start loading
+      newAudio.load();
+      setIsPlaying(true);
+      return;
     }
     
+    // If already initialized, just toggle play state
     setError(null);
     setIsPlaying(prevIsPlaying => !prevIsPlaying);
 
-  }, [track, isReady]);
+  }, [track, isReady, onAudioReady]);
 
   const handleNextTrack = useCallback(() => {
     if (currentTrackIndex < tracks.length - 1) {
@@ -612,85 +636,21 @@ export function MusicPlaylist({ onAllAudiosProcessed }: MusicPlaylistProps) {
     }
   ];
   
-  // Preloading logic for all tracks in the playlist
+  // Remove the preloading useEffect or replace with:
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      const urlsToPreloadForSsrCheck = tracks
-        .map(track => track.audioPreviewUrl)
-        .filter((url): url is string => typeof url === 'string' && url.length > 0);
-      if (onAllAudiosProcessed && urlsToPreloadForSsrCheck.length === 0) {
-          onAllAudiosProcessed();
-      }
-      return;
+    // Only call callback immediately without preloading
+    if (onAllAudiosProcessed) {
+      onAllAudiosProcessed();
     }
-
-    const urlsToPreload = tracks
-      .map(track => track.audioPreviewUrl)
-      .filter((url): url is string => typeof url === 'string' && url.length > 0);
-
-    if (urlsToPreload.length === 0) {
-      onAllAudiosProcessed?.();
-      return;
-    }
-
-    let processedCount = 0;
-    const eventHandlers: Array<{ 
-      audio: HTMLAudioElement;
-      boundOnCanPlayThrough: () => void; 
-      boundOnError: () => void;
-    }> = [];
-
-    urlsToPreload.forEach(rawUrl => {
-      const audio = new Audio();
-      const audioUrl = rawUrl.startsWith("http") ? rawUrl : `${window.location.origin}${rawUrl}`;
-
-      const handleCanPlayThrough = () => {
-        processedCount++;
-        if (processedCount === urlsToPreload.length) {
-          onAllAudiosProcessed?.();
-        }
-        audio.removeEventListener('canplaythrough', handleCanPlayThrough);
-        audio.removeEventListener('error', handleError);
-      };
-      
-      const handleError = () => {
-        console.warn(`Failed to preload audio: ${audioUrl}`);
-        processedCount++;
-        if (processedCount === urlsToPreload.length) {
-          onAllAudiosProcessed?.();
-        }
-        audio.removeEventListener('canplaythrough', handleCanPlayThrough);
-        audio.removeEventListener('error', handleError);
-      };
-      
-      eventHandlers.push({ audio, boundOnCanPlayThrough: handleCanPlayThrough, boundOnError: handleError });
-
-      audio.addEventListener('canplaythrough', handleCanPlayThrough);
-      audio.addEventListener('error', handleError);
-      audio.src = audioUrl;
-      audio.load(); // Start loading
-    });
-
-    return () => {
-      eventHandlers.forEach(({ audio, boundOnCanPlayThrough, boundOnError }) => {
-        audio.pause();
-        audio.removeEventListener('canplaythrough', boundOnCanPlayThrough);
-        audio.removeEventListener('error', boundOnError);
-        audio.src = ""; // Release resources
-      });
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps 
-  }, [onAllAudiosProcessed]); // `tracks` is stable, effect runs based on onAllAudiosProcessed.
+  }, [onAllAudiosProcessed]);
 
   return (
     <MusicWidget 
-        tracks={tracks} 
-        autoplay={false} 
-        initialTrack={0}
-        onAudioReady={() => { 
-            console.log("Audio is ready to play!");
-        }}
-        onPlaybackError={() => console.error("Playback error occurred from MusicWidget callback.")}
+      tracks={tracks} 
+      autoplay={false} 
+      initialTrack={0}
+      onAudioReady={() => console.log("Audio is ready to play!")}
+      onPlaybackError={() => console.error("Playback error occurred")}
     />
   );
 }

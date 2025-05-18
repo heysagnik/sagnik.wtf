@@ -59,14 +59,9 @@ export default function HomePageContent() { // Renamed from Home
   // Transition from boot screen to messaging app
   useEffect(() => {
     if (showBootScreen && !fadeOutBootScreen) {
-      // Log states for debugging
-      console.log("Resource states:", {
-        musicReady: musicPreloadReady,
-        charLoaded: charImageLoaded
-      });
-      
-      if (musicPreloadReady && charImageLoaded) {
-        console.log("All resources ready, proceeding with boot sequence");
+      // Remove musicPreloadReady from condition and just check character image
+      if (charImageLoaded) {
+        console.log("Character loaded, proceeding with boot sequence");
         
         bootScreenTimerRef.current = setTimeout(() => {
           console.log("Starting fade out animation");
@@ -80,7 +75,7 @@ export default function HomePageContent() { // Renamed from Home
         bootScreenTimerRef.current = null;
       }
     };
-  }, [showBootScreen, fadeOutBootScreen, musicPreloadReady, charImageLoaded]);
+  }, [showBootScreen, fadeOutBootScreen, charImageLoaded]);
 
   useEffect(() => {
     if (fadeOutBootScreen && !transitionTimerRef.current) {
@@ -99,13 +94,7 @@ export default function HomePageContent() { // Renamed from Home
 
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">
-      {/* Render hidden widgets for preloading */}
-      {showBootScreen && (
-        <div style={{ display: 'none' }}>
-          <MusicPlaylist onAllAudiosProcessed={handleMusicReady} />
-          
-        </div>
-      )}
+
 
       <div className="w-full max-w-[500px] h-full">
         {showBootScreen ? (
@@ -118,4 +107,4 @@ export default function HomePageContent() { // Renamed from Home
       </div>
     </main>
   );
-} 
+}

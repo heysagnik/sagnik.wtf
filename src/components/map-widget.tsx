@@ -218,7 +218,7 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
         />
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <Image
-            src="/map-haldia.png"
+            src="/map-haldia.webp"
             alt={`Map showing ${locationCity}`}
             fill
             className="object-cover scale-200 -translate-x-10 -translate-y-8"
