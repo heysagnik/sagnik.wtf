@@ -11,7 +11,7 @@ const ANIMATION = {
   FINAL_TRANSITION: 1000,
 };
 
-export default function HomePageContent() { // Renamed from Home
+export default function HomePageContent() {
   const searchParams = useSearchParams();
   const [showBootScreen, setShowBootScreen] = useState(true);
   const [fadeOutBootScreen, setFadeOutBootScreen] = useState(false);
@@ -33,27 +33,51 @@ export default function HomePageContent() { // Renamed from Home
   
   // Handle character image preloading
   useEffect(() => {
-    const img = new window.Image();
-    img.src = "/char.png"; // Make sure this path matches your avatar image path
-    img.onload = () => {
+    let charLoaded = false;
+    let mapLoaded = false;
+    
+    const charImg = new window.Image();
+    charImg.src = "/char.png";
+    charImg.onload = () => {
       console.log("Character image loaded");
-      setCharImageLoaded(true);
+      if (mapLoaded) {
+        setCharImageLoaded(true);
+      } else {
+        charLoaded = true;
+      }
     };
-    img.onerror = (error) => {
+    charImg.onerror = (error) => {
       console.error("Failed to load character image:", error);
-      // Proceed anyway to avoid being stuck
-      setCharImageLoaded(true);
+      if (mapLoaded) {
+        setCharImageLoaded(true);
+      } else {
+        charLoaded = true;
+      }
+    };
+    
+    const mapImg = new window.Image();
+    mapImg.src = "/map-haldia.webp";
+    mapImg.onload = () => {
+      console.log("Map image loaded");
+      if (charLoaded) {
+        setCharImageLoaded(true);
+      } else {
+        mapLoaded = true;
+      }
+    };
+    mapImg.onerror = (error) => {
+      console.error("Failed to load map image:", error);
+      if (charLoaded) {
+        setCharImageLoaded(true);
+      } else {
+        mapLoaded = true;
+      }
     };
   }, []);
-
-
-
-
 
   // Transition from boot screen to messaging app
   useEffect(() => {
     if (showBootScreen && !fadeOutBootScreen) {
-      // Remove musicPreloadReady from condition and just check character image
       if (charImageLoaded) {
         console.log("Character loaded, proceeding with boot sequence");
         
@@ -88,8 +112,6 @@ export default function HomePageContent() { // Renamed from Home
 
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">
-
-
       <div className="w-full max-w-[500px] h-full">
         {showBootScreen ? (
           <div className={`fixed inset-0 z-50 transition-opacity duration-1000 ${fadeOutBootScreen ? 'opacity-0' : 'opacity-100'}`}>
