@@ -282,3 +282,16 @@ export default function MapWidget({ locationCity }: { locationCity: string }) {
     </div>
   );
 }
+
+
+export const LocationMessage = ({
+  locationCity
+}: {
+  locationCity: string;
+}) => {
+  return (
+    <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[200px] sm:max-w-[240px]">
+      <MapWidget locationCity={locationCity} />
+    </div>
+  );
+};

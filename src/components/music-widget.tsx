@@ -750,3 +750,32 @@ export function MusicPlaylist({ onAllAudiosProcessed }: MusicPlaylistProps) {
     />
   );
 }
+
+export const MusicMessage = ({
+  content,
+  bubbleClass,
+  bubbleMaxWidth
+}: {
+  content?: string;
+  bubbleClass: string;
+  bubbleMaxWidth: string;
+}) => {
+  if (!content) {
+    return (
+      <div className="rounded-[18px] overflow-hidden shadow-sm w-full max-w-[85%] sm:max-w-[300px] md:max-w-[320px]">
+        <MusicPlaylist />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}>
+      <div className="space-y-2">
+        <p className="text-[14px] leading-tight">{content}</p>
+        <div className="overflow-hidden rounded-xl mt-1.5">
+          <MusicPlaylist />
+        </div>
+      </div>
+    </div>
+  );
+};

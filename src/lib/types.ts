@@ -1,155 +1,101 @@
+/**
+ * Core entity types
+ */
+
 export interface Blog {
-  title: string
-  description: string
-  link?: string
+  title: string;
+  description: string;
+  link?: string;
 }
 
 export interface Project {
-  title: string
-  image: string
-  description?: string
-  link?: string
-  url?: string
-  tags?: string[]
-  technologies?: string[]
-  githubUrl?: string
-  demoUrl?: string
+  title: string;
+  image?: string;
+  description?: string;
+  demoUrl?: string;
+  githubUrl?: string;
+  technologies?: string[];
 }
 
 export interface Location {
-  name: string
-  mapImage?: string
-  city?: string
-  coordinates?: {
-    lat: number
-    lng: number
-  }
+  city: string;
 }
 
-export interface PhotoItemType {
+export interface Photo {
   src: string;
   alt?: string;
   caption?: string;
 }
 
-export type MessageType =
-  | {
-      id: string;
-      content: string;
-      type: "text";
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | {
-      id: string;
-      content?: string;
-      type: "blog";
-      blogs: Blog[];
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      project?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | {
-      id: string;
-      content?: string;
-      type: "project";
-      project: Project;
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | {
-      id: string;
-      content?: string;
-      type: "location";
-      location: { city: string; mapLink?: string };
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | {
-      id: string;
-      content?: string;
-      type: "music";
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | {
-      id: string;
-      content: string;
-      type: "cta";
-      link: string;
-      linkText?: string;
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      location?: never;
-      photos?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | { // New type for photos
-      id: string;
-      content?: string; // Optional introductory text
-      type: "photos";
-      photos: PhotoItemType[];
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      resumeLink?: never;
-      resumeLinkText?: never;
-    }
-  | { // New type for resume
-      id: string;
-      content?: string; // Optional introductory text
-      type: "resume";
-      resumeLink: string; // URL to the resume file (e.g., PDF)
-      resumeLinkText?: string; // Text for the link/button (e.g., "View My Resume")
-      sender: "user" | "assistant";
-      timestamp?: string | number;
-      blogs?: never;
-      project?: never;
-      location?: never;
-      link?: never;
-      linkText?: never;
-      photos?: never;
-    };
+/**
+ * Base message interface that all message types extend
+ */
+interface BaseMessage {
+  id: string;
+  sender: "user" | "assistant";
+  timestamp?: string | number;
+}
+
+/**
+ * Message type-specific interfaces
+ */
+export interface TextMessage extends BaseMessage {
+  type: "text";
+  content: string;
+}
+
+export interface BlogMessage extends BaseMessage {
+  type: "blog";
+  content?: string;
+  blogs: Blog[];
+}
+
+export interface ProjectMessage extends BaseMessage {
+  type: "project";
+  content?: string;
+  project: Project;
+}
+
+export interface LocationMessage extends BaseMessage {
+  type: "location";
+  content?: string;
+  location: Location;
+}
+
+export interface MusicMessage extends BaseMessage {
+  type: "music";
+  content?: string;
+}
+
+export interface CTAMessage extends BaseMessage {
+  type: "cta";
+  content: string;
+  link: string;
+  linkText?: string;
+}
+
+export interface PhotosMessage extends BaseMessage {
+  type: "photos";
+  content?: string;
+  photos: Photo[];
+}
+
+export interface ResumeMessage extends BaseMessage {
+  type: "resume";
+  content?: string;
+  resumeLink: string;
+  resumeLinkText?: string;
+}
+
+/**
+ * Union type combining all message types for use throughout the app
+ */
+export type MessageType = 
+  | TextMessage
+  | BlogMessage
+  | ProjectMessage
+  | LocationMessage
+  | MusicMessage
+  | CTAMessage
+  | PhotosMessage
+  | ResumeMessage;

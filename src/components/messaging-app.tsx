@@ -57,7 +57,17 @@ export default function MessagingApp({ skipIntroAnimation = false }) {
     }
   }, [skipIntroAnimation]);
 
+  // Replace the existing useEffect that controls visibleMessages:
   useEffect(() => {
+    // If skipAnimation is true, immediately show all messages
+    if (skipIntroAnimation && messages.length > 0) {
+      setVisibleMessages(messages);
+      setIsGraduallyTyping(false);
+      prevProcessedMessagesLength.current = messages.length;
+      return;
+    }
+    
+    // For animated display, only proceed if there are new messages to reveal
     if (messages.length === 0 || messages.length <= prevProcessedMessagesLength.current) {
       return;
     }
@@ -93,7 +103,7 @@ export default function MessagingApp({ skipIntroAnimation = false }) {
 
     return () => {
       clearTimeout(timer);
-    }
+    };
   }, [messages, visibleMessages, skipIntroAnimation]);
   
   useEffect(() => {
