@@ -1,4 +1,7 @@
-import React, { JSX, useCallback, useMemo } from 'react';
+import React, { JSX, useCallback, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { MessageReaction } from './message-reaction';
+import { ReactionAnimation } from './reaction-animation';
 
 // Regex pattern for URLs
 const URL_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
@@ -21,6 +24,15 @@ export const TextMessage = ({
   bubbleClass: string;
   bubbleMaxWidth: string;
 }) => {
+  // State for handling reactions
+  const [showReactions, setShowReactions] = useState(false);
+  const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // New state for animation
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [animatingEmoji, setAnimatingEmoji] = useState<string | null>(null);
+
   // Helper function to process regex matches on text parts
   const processRegex = useCallback(
     (
@@ -206,25 +218,106 @@ export const TextMessage = ({
     [processLine]
   );
   
+  // Handle long press for mobile
+  const handleTouchStart = () => {
+    const timer = setTimeout(() => {
+      setShowReactions(true);
+    }, 500); // 500ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  // Handle right click for desktop
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowReactions(true);
+  };
+
+  // Handle reaction selection
+  const handleSelectReaction = (reaction: string) => {
+    // Close the reaction panel first
+    setShowReactions(false);
+    
+    // Small delay to let the panel start closing
+    setTimeout(() => {
+      // Play the animation with slight delay
+      setAnimatingEmoji(reaction);
+      setShowAnimation(true);
+      
+      // Then set the reaction on the message
+      setSelectedReaction(reaction);
+    }, 50);
+  };
+  
+  // Handle when animation completes
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
+    setAnimatingEmoji(null);
+  };
+  
   const formattedContent = useMemo(() => formatMessage(content), [content, formatMessage]);
   const isUserBubble = bubbleClass.includes('bubble-sent');
-  const isDarkMode = bubbleClass.includes('dark') || bubbleClass.includes('theme-dark');
+  // Always use dark mode
+  const isDarkMode = true;
 
   return (
     <div 
-      className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative group`}
+      className={`${bubbleClass} dark px-4 py-2 ${bubbleMaxWidth} relative group bg-gray-800 text-white`}
       data-testid="text-message"
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
+      {/* Reaction bubble */}
+      <MessageReaction 
+        isVisible={showReactions} 
+        onClose={() => setShowReactions(false)} 
+        onSelectReaction={handleSelectReaction} 
+      />
+      
+      {/* Full-screen reaction animation */}
+      {showAnimation && animatingEmoji && (
+        <ReactionAnimation 
+          emoji={animatingEmoji} 
+          onComplete={handleAnimationComplete} 
+        />
+      )}
+      
+      {/* Selected reaction display */}
+      {selectedReaction && (
+        <motion.div 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="absolute -top-2 -right-2 text-xl bg-[#2D2D2D]/80 rounded-full h-8 w-8 flex items-center justify-center shadow-md border border-gray-700/50"
+        >
+          {selectedReaction}
+        </motion.div>
+      )}
+      
       <div 
-        className="text-[16px] leading-[21px] font-[-apple-system,BlinkMacSystemFont,sans-serif] selection:bg-blue-200 dark:selection:bg-blue-800 selection:text-current"
+        className="text-[16px] leading-[21px] font-[-apple-system,BlinkMacSystemFont,sans-serif] dark:text-white"
         style={{
-          WebkitTouchCallout: 'default',
-          WebkitUserSelect: 'text',
-          userSelect: 'text',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
           wordBreak: 'break-word',
+          msUserSelect: 'none',
+          MozUserSelect: 'none',
         }}
       >
         {formattedContent}
+      </div>
+      
+      {/* Double tap hint */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-50 text-xs text-gray-400 pointer-events-none transition-opacity">
+        Long press for reactions
       </div>
       
       <style jsx>{`

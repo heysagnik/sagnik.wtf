@@ -468,13 +468,18 @@ export const PhotosMessage = ({
                         )}
                         {/* Video play indicator overlay */}
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="bg-black/40 rounded-full p-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide-play">
-                              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                          </div>
+                           
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                    {/* Larger semi-transparent white circle with soft shadow */}
+                                    <circle cx="12" cy="12" r="11" fill="rgba(255,255,255,0.95)" filter="drop-shadow(0 1px 3px rgba(0,0,0,0.2))" />
+                                    {/* iOS-style play triangle, slightly larger and with soft edges */}
+                                    <path d="M16 12L10 16.5V7.5L16 12Z" fill="#000000" fillOpacity="0.8" />
+                                </svg>
+                        
                         </div>
-                      </div>
+
+                        </div>
+                      
                     ) : (
                       <Image
                         src={photo.src}
@@ -630,14 +635,14 @@ export const PhotosMessage = ({
                         >
                           <div className={`bg-black/30 backdrop-blur-sm rounded-full p-4 transition-opacity ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                             {isVideoPlaying ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
                                 <rect x="6" y="4" width="4" height="16"></rect>
                                 <rect x="14" y="4" width="4" height="16"></rect>
-                              </svg>
+                            </svg>
                             ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
                                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                              </svg>
+                            </svg>
                             )}
                           </div>
                         </div>
