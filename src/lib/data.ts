@@ -19,7 +19,26 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
       sender: "assistant",
     },
     {
-      id: "1.1",
+      id:"1.1",
+      content: "",
+      photos: [
+        {
+          src: "/hello.jpg",
+          alt: "Sagnik's photo",
+          
+        },
+        {
+          src: "/char.png",
+          alt: "Sagnik's second photo",
+         
+        },
+      ],
+      type: "photos",
+      sender: "assistant",
+
+    },
+    {
+      id: "1.2",
       content: "i make cool stuff & products.",
       type: "text",
       sender: "assistant",
@@ -96,31 +115,51 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
     },
     {
       id: "6.1",
-      type: "project",
-      project: {
-        title: "Portfolio Website",
-        description: "A personal portfolio built with Next.js and Tailwind CSS",
-        image: "/hello.mp4",
-        technologies: ["Next.js", "Tailwind", "TypeScript"],
-        githubUrl: "https://github.com/heysagnik",
-        demoUrl: "https://sagnik-wtf.vercel.app",
-      },
+      type: "photos",
+      photos: [
+        {
+          src: "/hello.mp4", // Using project image as photo
+          alt: "Portfolio Website preview"
+        }
+      ],
       sender: "assistant",
-      content: "",
+      content: ""
     },
     {
       id: "6.2",
-      type: "project",
-      project: {
-        title: "Chat Application",
-        description: "A real-time chat application built with React and Firebase",
-        image: "/hello.jpg",
-        technologies: ["React", "Firebase", "TypeScript"],
-        githubUrl: "",
-        demoUrl: "",
-      },
+      type: "text",
+      content: "Portfolio Website\n\nA personal portfolio built with Next.js and Tailwind CSS\n\nTechnologies: Next.js, Tailwind, TypeScript",
+      sender: "assistant"
+    },
+    {
+      id: "6.3",
+      type: "text",
+      content: "this is the site you're on rn, lol.",
+      sender: "assistant"
+    },
+    {
+      id: "6.4",
+      type: "photos",
+      photos: [
+        {
+          src: "/hello.jpg", // Using project image as photo
+          alt: "Chat Application preview"
+        }
+      ],
       sender: "assistant",
-      content: "",
+      content: ""
+    },
+    {
+      id: "6.5",
+      type: "text",
+      content: "Chat Application\n\nA real-time chat application built with React and Firebase\n\nTechnologies: React, Firebase, TypeScript",
+      sender: "assistant"
+    },
+    {
+      id: "6.6",
+      type: "text",
+      content: "check it out on github https://github.com/heysagnik", // Using GitHub as fallback since no demo URL
+      sender: "assistant"
     },
     {
       id: "7",

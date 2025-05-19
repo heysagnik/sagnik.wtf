@@ -25,6 +25,7 @@ export interface Photo {
   src: string;
   alt?: string;
   caption?: string;
+  poster?: string; // For video thumbnails
 }
 
 /**
@@ -34,6 +35,7 @@ interface BaseMessage {
   id: string;
   sender: "user" | "assistant";
   timestamp?: string | number;
+  reactions?: string[]; // Added reactions property for Apple-style message reactions
 }
 
 /**
