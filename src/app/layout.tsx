@@ -113,9 +113,8 @@ export default function RootLayout({
         />
         <Script
           id="analytics-script"
-          src="https://raw.githubusercontent.com/heysagnik/track-script/refs/heads/main/script.js"
-          async
-          defer
+          src="https://my-github-cdn.vercel.app/api/cdn?file=script.js"
+          strategy="afterInteractive"
         />
       </body>
     </html>
