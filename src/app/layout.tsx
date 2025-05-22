@@ -114,9 +114,9 @@ export default function RootLayout({
         <Script
           id="analytics-script"
           src="https://raw.githubusercontent.com/heysagnik/track-script/refs/heads/main/script.js"
-          strategy="lazyOnload"
+          async
+          defer
         />
-
       </body>
     </html>
   );
