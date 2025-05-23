@@ -7,8 +7,8 @@ interface MessageInputProps {
   placeholder?: string;
 }
 
-// Replace with your WhatsApp phone number (e.g., 15551234567 for a US number)
-const YOUR_WHATSAPP_PHONE_NUMBER = "919434414677"; 
+// Replace with your email address
+const YOUR_EMAIL = "sahoosagnik1@gmail.com"; 
 
 export const MessageInput = memo(({ 
   onSend, 
@@ -37,9 +37,10 @@ export const MessageInput = memo(({
     if (inputValue.trim() && onSend && isEnabled) {
       const messageToSend = inputValue.trim();
       
-      const encodedMessage = encodeURIComponent(messageToSend);
-      const whatsappUrl = `https://wa.me/${YOUR_WHATSAPP_PHONE_NUMBER}?text=${encodedMessage}`;
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      const subject = encodeURIComponent("Message from Portfolio Website");
+      const body = encodeURIComponent(messageToSend);
+      const mailtoUrl = `mailto:${YOUR_EMAIL}?subject=${subject}&body=${body}`;
+      window.location.href = mailtoUrl;
       
       // You can still call onSend if you want to update the local UI as well
       onSend?.(messageToSend);
@@ -84,7 +85,7 @@ export const MessageInput = memo(({
             strokeLinejoin="round"
             className="text-white/80"
           >
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
             <circle cx="12" cy="13" r="3"></circle>
           </svg>
         </motion.button> */}
