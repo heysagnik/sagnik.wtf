@@ -4,14 +4,70 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
-export default function SplashScreen() {
+const TIMING_CONFIG = {
+  DISPLAY_DURATION: 2200,
+  FADE_DURATION: 0.8
+} as const
+
+const ANIMATION_CONFIG = {
+  container: {
+    initial: { opacity: 0, scale: 0.9 },
+    animate: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { 
+        duration: 0.5,
+        ease: [0.25, 0.1, 0.25, 1.0]
+      }
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      filter: "blur(8px)",
+      transition: {
+        duration: TIMING_CONFIG.FADE_DURATION,
+        ease: "easeInOut",
+        opacity: { duration: 1.0 },
+        scale: { duration: 0.7 }
+      }
+    }
+  },
+  avatar: {
+    initial: { opacity: 0, scale: 0.8 },
+    animate: { opacity: 1, scale: 1 },
+    transition: { duration: 0.4, delay: 0.2 }
+  },
+  divider: {
+    initial: { width: 0 },
+    animate: { width: "60%" },
+    transition: { duration: 0.4, delay: 0.3 }
+  },
+  content: {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay: 0.4, duration: 0.5 }
+  },
+  bottomDivider: {
+    initial: { width: 0 },
+    animate: { width: "40%" },
+    transition: { duration: 0.4, delay: 0.5 }
+  }
+} as const
+
+const BRAND_DATA = {
+  name: "sagnik",
+  domain: ".wtf",
+  title: "Product developer",
+  avatar: "/char.png"
+} as const
+
+const SplashScreen = () => {
   const [isVisible, setIsVisible] = useState(true);
   
-  // Handle the fade out animation with a longer duration
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-    }, 2200); // Extended to 2.2 seconds to allow for a smoother transition
+    }, TIMING_CONFIG.DISPLAY_DURATION);
     
     return () => clearTimeout(timer);
   }, []);
@@ -37,74 +93,53 @@ export default function SplashScreen() {
       <AnimatePresence mode="wait">
         {isVisible && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1,
-              transition: { 
-                duration: 0.5,
-                ease: [0.25, 0.1, 0.25, 1.0]
-              }
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95,
-              filter: "blur(8px)",
-              transition: {
-                duration: 0.8,
-                ease: "easeInOut",
-                opacity: { duration: 1.0 },
-                scale: { duration: 0.7 }
-              }
-            }}
+            {...ANIMATION_CONFIG.container}
             className="flex flex-col items-center text-center px-6 z-10 relative"
           >
             {/* Logo/avatar element */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
+              {...ANIMATION_CONFIG.avatar}
               className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/10 mb-5"
             >
-              <Image src="/char.png" alt="Avatar" width={64} height={64} className="w-full h-full object-cover" />
+              <Image 
+                src={BRAND_DATA.avatar} 
+                alt="Avatar" 
+                width={64} 
+                height={64} 
+                className="w-full h-full object-cover" 
+              />
             </motion.div>
             
             {/* Top divider */}
             <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: "60%" }}
-              transition={{ duration: 0.4, delay: 0.3 }}
+              {...ANIMATION_CONFIG.divider}
               className="h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent mb-5"
             />
             
             {/* Main title */}
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              {...ANIMATION_CONFIG.content}
               className="relative"
             >
               <h2 className="text-white/90 text-2xl font-medium tracking-wide">
-                sagnik<span className="text-blue-500">.</span>wtf
+                {BRAND_DATA.name}<span className="text-blue-500">{BRAND_DATA.domain}</span>
               </h2>
               
               <p className="text-white/50 text-sm mt-2 font-light">
-                Product developer
+                {BRAND_DATA.title}
               </p>
             </motion.div>
             
             {/* Bottom divider */}
             <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: "40%" }}
-              transition={{ duration: 0.4, delay: 0.5 }}
+              {...ANIMATION_CONFIG.bottomDivider}
               className="h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent mt-5"
             />
-            
-          
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+
+export default SplashScreen;

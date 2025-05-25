@@ -88,8 +88,13 @@ export const TextMessage = ({
       parts = processRegex(parts, MD_PATTERNS.CODE, (match, ...rest) => {
         const idx = rest.pop() as number;
         const codeContent = rest[0];
+        const isUserBubble = bubbleClass.includes('bubble-sent');
         return (
-          <code key={`${parentKey}-code-${idx}`} className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[14px] font-mono">
+          <code key={`${parentKey}-code-${idx}`} className={`px-1.5 py-0.5 rounded text-[15px] font-mono ${
+            isUserBubble 
+              ? 'bg-white/20 text-white' 
+              : 'bg-white/20 dark:bg-gray-700 text-black dark:text-gray-200'
+          }`}>
             {codeContent}
           </code>
         );
@@ -101,6 +106,7 @@ export const TextMessage = ({
         const [linkText = "", url = ""] = rest.map(item => 
           typeof item === 'string' ? item : String(item || '')
         );
+        const isUserBubble = bubbleClass.includes('bubble-sent');
         
         return (
           <a 
@@ -108,7 +114,11 @@ export const TextMessage = ({
             href={url} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-blue-600 dark:text-blue-400 underline decoration-[0.5px] underline-offset-[1.5px]"
+            className={`underline decoration-[0.5px] underline-offset-[1.5px] ${
+              isUserBubble 
+                ? 'text-white/90' 
+                : 'text-blue-600 dark:text-blue-400'
+            }`}
           >
             {linkText}
           </a>
@@ -116,9 +126,9 @@ export const TextMessage = ({
       });
       
       // Process URLs that aren't already in markdown link format
-      parts = processRegex(parts, URL_REGEX, (match, ...rest) => { // Capture groups from URL_REGEX are _wwwGroup and _pathGroup
-        const idx = rest.pop() as number; // The counter is always the last element
-        // const [_wwwGroup, _pathGroup] = rest; // The captured groups
+      parts = processRegex(parts, URL_REGEX, (match, ...rest) => {
+        const idx = rest.pop() as number;
+        const isUserBubble = bubbleClass.includes('bubble-sent');
         
         const url = match.startsWith('http') ? match : `https://${match}`;
         const displayUrl = match.length > 35 ? `${match.substring(0, 32)}...` : match;
@@ -129,7 +139,11 @@ export const TextMessage = ({
             href={url} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-blue-600 dark:text-blue-400 underline decoration-[0.5px] underline-offset-[1.5px]"
+            className={`underline decoration-[0.5px] underline-offset-[1.5px] ${
+              isUserBubble 
+                ? 'text-white/90' 
+                : 'text-blue-600 dark:text-blue-400'
+            }`}
           >
             {displayUrl}
           </a>
@@ -168,7 +182,7 @@ export const TextMessage = ({
         return part;
       });
     },
-    [processRegex]
+    [processRegex, bubbleClass]
   );
 
   // Process text to render markdown and links
@@ -263,17 +277,25 @@ export const TextMessage = ({
   
   const formattedContent = useMemo(() => formatMessage(content), [content, formatMessage]);
   const isUserBubble = bubbleClass.includes('bubble-sent');
-  // Always use dark mode
-  const isDarkMode = true;
 
   return (
     <div 
-      className={`${bubbleClass} dark px-4 py-2 ${bubbleMaxWidth} relative group bg-gray-800 text-white`}
+      className={`${bubbleClass} px-3 py-2 ${bubbleMaxWidth} relative group transition-all duration-200 ${
+        isUserBubble 
+          ? 'bg-[#007AFF] text-white shadow-sm' 
+          : 'bg-[#E5E5EA] dark:bg-[#3A3A3C] text-black dark:text-white shadow-sm'
+      }`}
       data-testid="text-message"
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      style={{
+        borderRadius: '18px',
+        minHeight: '32px',
+        backdropFilter: 'blur(10px)',
+        border: isUserBubble ? 'none' : '1px solid rgba(0,0,0,0.05)',
+      }}
     >
       {/* Reaction bubble */}
       <MessageReaction 
@@ -295,45 +317,68 @@ export const TextMessage = ({
         <motion.div 
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="absolute -top-2 -right-2 text-xl bg-[#2D2D2D]/80 rounded-full h-8 w-8 flex items-center justify-center shadow-md border border-gray-700/50"
+          className="absolute -top-2 -right-2 text-lg bg-white dark:bg-gray-800 rounded-full h-7 w-7 flex items-center justify-center shadow-lg border border-gray-200 dark:border-gray-600"
         >
           {selectedReaction}
         </motion.div>
       )}
       
       <div 
-        className="text-[16px] leading-[21px] font-[-apple-system,BlinkMacSystemFont,sans-serif] dark:text-white"
+        className={`text-[17px] leading-[22px] font-normal ${
+          isUserBubble ? 'text-white' : 'text-black dark:text-white'
+        }`}
         style={{
+          fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif',
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none',
           userSelect: 'none',
           wordBreak: 'break-word',
           msUserSelect: 'none',
           MozUserSelect: 'none',
+          fontWeight: '400',
+          letterSpacing: '-0.01em',
         }}
       >
         {formattedContent}
       </div>
       
-      {/* Double tap hint */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-50 text-xs text-gray-400 pointer-events-none transition-opacity">
-        Long press for reactions
+      {/* Long press hint */}
+      <div
+        className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-50 text-[10px] text-gray-400 dark:text-gray-500 pointer-events-none transition-opacity`}
+      >
+        <span className="desktop-hint">Right click</span>
+        <span className="mobile-hint">Long press</span>
       </div>
-      
       <style jsx>{`
+        .desktop-hint { display: none; }
+        .mobile-hint { display: inline; }
+
         @media (hover: hover) {
+          .desktop-hint { display: inline; }
+          .mobile-hint { display: none; }
+        }
+        @media (hover: hover) {
+          .group:active {
+            transform: scale(0.98);
+          }
+          
           .group:active::before {
             content: '';
             position: absolute;
             inset: 0;
             background-color: ${isUserBubble 
-              ? 'rgba(255,255,255,0.1)' 
-              : isDarkMode 
-                ? 'rgba(255,255,255,0.07)' 
-                : 'rgba(0,0,0,0.05)'
+              ? 'rgba(255,255,255,0.15)' 
+              : 'rgba(0,0,0,0.08)'
             };
             border-radius: inherit;
             pointer-events: none;
+          }
+        }
+        
+        /* iOS-style pressed state for touch devices */
+        @media (hover: none) {
+          .group:active {
+            transform: scale(0.95);
           }
         }
       `}</style>

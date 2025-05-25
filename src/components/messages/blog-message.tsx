@@ -10,11 +10,10 @@ interface BlogItemType {
 export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || isTransitioning) return;
+    if (!cardRef.current) return;
     
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -23,53 +22,45 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
     const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 10;
     
     setRotation({ x: rotateX, y: rotateY });
-  }, [isTransitioning]);
+  }, []);
   
   const handleMouseEnter = useCallback(() => {
-    if (!isTransitioning) setIsHovering(true);
-  }, [isTransitioning]);
+    setIsHovering(true);
+  }, []);
   
   const handleMouseLeave = useCallback(() => {
-    if (!isTransitioning) {
-      setIsHovering(false);
-      setRotation({ x: 0, y: 0 });
-    }
-  }, [isTransitioning]);
+    setIsHovering(false);
+    setRotation({ x: 0, y: 0 });
+  }, []);
 
   const handleBlogClick = useCallback(() => {
-    if (!blog.link || isTransitioning) return;
-    
-    setIsTransitioning(true);
+    if (!blog.link) return;
     
     // Prepare URL with the 'from' parameter
     const separator = blog.link.includes('?') ? '&' : '?';
     const linkWithParam = `${blog.link}${separator}from=home`;
     
-    // Add transition class to body to handle page-level animation
-    document.body.classList.add('page-transitioning');
-    
-    // Navigate after the zoom animation completes
-    setTimeout(() => {
-      window.location.href = linkWithParam;
-    }, 400); // Match this with the CSS transition duration
-  }, [blog.link, isTransitioning]);
+    window.location.href = linkWithParam;
+  }, [blog.link]);
 
   // Card transform style derived from state
   const cardTransformStyle = useMemo(() => ({
-    transform: isHovering && !isTransitioning
-      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.05)` 
+    transform: isHovering
+      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)` 
       : 'rotateX(0deg) rotateY(0deg) scale(1)',
-    transition: isHovering ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out'
-  }), [isHovering, isTransitioning, rotation.x, rotation.y]);
+    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
+  }), [isHovering, rotation.x, rotation.y]);
 
   // Content transform style
   const contentTransformStyle = useMemo(() => ({
-    transform: isHovering && !isTransitioning ? 'translateZ(20px)' : 'translateZ(0)'
-  }), [isHovering, isTransitioning]);
+    transform: isHovering ? 'translateZ(10px)' : 'translateZ(0)',
+    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
+  }), [isHovering]);
 
   // Icon transform style
   const iconTransformStyle = useMemo(() => ({
-    transform: isHovering ? 'translateZ(40px)' : 'translateZ(0)'
+    transform: isHovering ? 'translateZ(20px)' : 'translateZ(0)',
+    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
   }), [isHovering]);
 
   return (
@@ -84,28 +75,19 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      animate={{
-        scale: isTransitioning ? 1.2 : 1,
-        opacity: isTransitioning ? 0 : 1,
-        zIndex: isTransitioning ? 50 : 'auto',
-      }}
-      transition={{
-        scale: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
-        opacity: { duration: 0.3, delay: 0.1 }
-      }}
     >
       <div
         className={`
           relative rounded-xl p-3
           bg-[#1A1A1A]
-          hover:shadow-xl
-          transition-all duration-300 ease-out
+          hover:shadow-lg
+          transition-all duration-200 ease-out // Kept for hover effect, remove if not desired
           [transform-style:preserve-3d]
         `}
         style={cardTransformStyle}
       >
         <div 
-          className="relative transition-transform duration-300 ease-out"
+          className="relative transition-transform duration-300 ease-out" // Kept for hover effect, remove if not desired
           style={contentTransformStyle}
         >
           <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
@@ -116,11 +98,11 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
           </p>
         </div>
 
-        {blog.link && !isTransitioning && (
+        {blog.link && (
           <div
             className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
                      p-1 rounded-full group-hover:bg-slate-600/50
-                     transition-all duration-300 ease-out"
+                     transition-all duration-300 ease-out" // Kept for hover effect, remove if not desired
             style={iconTransformStyle}
             aria-label={`Open ${blog.title}`}
           >

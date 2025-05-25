@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 
 interface MessageInputProps {
   onSend?: (content: string) => void;
@@ -10,59 +10,45 @@ interface MessageInputProps {
 // Replace with your email address
 const YOUR_EMAIL = "sahoosagnik1@gmail.com"; 
 
-export const MessageInput = memo(({ 
+const ANIMATION_CONFIG = {
+  tap: { scale: 0.92 },
+  focus: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
+  blur: { backgroundColor: "rgba(255, 255, 255, 0.1)" }
+} as const;
+
+const MessageInput = memo<MessageInputProps>(({ 
   onSend, 
   isEnabled = true, 
   placeholder = "Say Hi ..." 
-}: MessageInputProps) => {
+}) => {
   const [isFocused, setIsFocused] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const textareaRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   
-  // Automatically adjust textarea height based on content
-  const adjustHeight = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  const handleSend = useCallback(() => {
+    const trimmedValue = inputValue.trim();
+    if (!trimmedValue || !isEnabled) return;
     
-    textarea.style.height = "30px";
-    const scrollHeight = textarea.scrollHeight;
-    textarea.style.height = Math.min(120, Math.max(36, scrollHeight)) + "px";
-  };
+    const subject = encodeURIComponent("Message from Portfolio Website");
+    const body = encodeURIComponent(trimmedValue);
+    const mailtoUrl = `mailto:${YOUR_EMAIL}?subject=${subject}&body=${body}`;
+    
+    window.location.href = mailtoUrl;
+    onSend?.(trimmedValue);
+    setInputValue("");
+    
+    setTimeout(() => inputRef.current?.focus(), 10);
+  }, [inputValue, isEnabled, onSend]);
   
-  useEffect(() => {
-    adjustHeight();
-  }, [inputValue]);
-
-  const handleSend = () => {
-    if (inputValue.trim() && onSend && isEnabled) {
-      const messageToSend = inputValue.trim();
-      
-      const subject = encodeURIComponent("Message from Portfolio Website");
-      const body = encodeURIComponent(messageToSend);
-      const mailtoUrl = `mailto:${YOUR_EMAIL}?subject=${subject}&body=${body}`;
-      window.location.href = mailtoUrl;
-      
-      // You can still call onSend if you want to update the local UI as well
-      onSend?.(messageToSend);
-      
-      setInputValue("");
-      
-      // Reset focus to textarea after sending
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
-      }, 10);
-    }
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && isEnabled) {
       e.preventDefault();
       handleSend();
     }
-  };
-  
+  }, [handleSend, isEnabled]);
+
+  const canSend = inputValue.trim() && isEnabled;
+
   return (
     <div className="px-3 py-2">
       <div className="flex items-center gap-2">
@@ -93,7 +79,7 @@ export const MessageInput = memo(({
         {/* App Store button */}
         <motion.button 
           className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70"
-          whileTap={{ scale: 0.92 }}
+          whileTap={ANIMATION_CONFIG.tap}
           aria-label="App Store"
           disabled={!isEnabled}
         >
@@ -119,16 +105,12 @@ export const MessageInput = memo(({
         <motion.div 
           className={`flex-grow flex items-center bg-white/10 rounded-full transition-all h-9 px-4
                      ${isFocused ? 'ring-1 ring-white/10' : ''}`}
-          animate={{
-            backgroundColor: isFocused && isEnabled 
-              ? "rgba(255, 255, 255, 0.12)" 
-              : "rgba(255, 255, 255, 0.1)",
-          }}
+          animate={isFocused && isEnabled ? ANIMATION_CONFIG.focus : ANIMATION_CONFIG.blur}
           initial={false}
           transition={{ duration: 0.2 }}
         >
           <input 
-            ref={textareaRef}
+            ref={inputRef}
             className="bg-transparent text-white w-full resize-none outline-none text-sm placeholder:text-white/40"
             placeholder={placeholder}
             value={inputValue}
@@ -144,18 +126,18 @@ export const MessageInput = memo(({
         <motion.button 
           onClick={handleSend}
           className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full ${
-            inputValue.trim() && isEnabled 
+            canSend 
               ? "bg-blue-500 text-white" 
               : "bg-white/10 text-white/40"
           }`}
-          whileTap={isEnabled && inputValue.trim() ? { scale: 0.95 } : {}}
+          whileTap={canSend ? ANIMATION_CONFIG.tap : {}}
           initial={false}
           animate={{ 
             opacity: isEnabled ? 1 : 0.7,
             transition: { duration: 0.2 }
           }}
           aria-label="Send message"
-          disabled={!isEnabled || !inputValue.trim()}
+          disabled={!canSend}
         >
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -180,3 +162,4 @@ export const MessageInput = memo(({
 });
 
 MessageInput.displayName = 'MessageInput';
+export { MessageInput };

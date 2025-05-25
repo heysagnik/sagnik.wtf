@@ -6,8 +6,8 @@ interface CompactHeaderProps {
   isVisible: boolean;
 }
 
-const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
-  const containerVariants = {
+const ANIMATION_CONFIG = {
+  container: {
     hidden: { 
       height: 0, 
       opacity: 0,
@@ -38,9 +38,8 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
         staggerDirection: -1
       }
     }
-  };
-
-  const childVariants = {
+  },
+  child: {
     hidden: { opacity: 0, y: -8 },
     visible: { 
       opacity: 1, 
@@ -52,29 +51,41 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
       y: -8,
       transition: { duration: 0.15 }
     }
-  };
+  }
+} as const
+
+const PROFILE_DATA = {
+  name: "Sagnik Sahoo",
+  title: "Developer",
+  avatar: "/char.png",
+  socialUrl: "https://x.com/heysagnik"
+} as const
+
+const CompactHeader = memo<CompactHeaderProps>(({ isVisible }) => {
+  const handleFollowClick = () => {
+    window.open(PROFILE_DATA.socialUrl, '_blank')
+  }
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
           className="fixed top-0 left-0 right-0 z-[2000] backdrop-blur-md bg-black/85 border-b border-white/5 overflow-hidden"
-          variants={containerVariants}
+          variants={ANIMATION_CONFIG.container}
           initial="hidden"
           animate="visible"
           exit="exit"
         >
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           
-          {/* Changed from max-w-3xl to max-w-[500px] to match the app container */}
           <div className="max-w-[500px] mx-auto h-full flex items-center px-3">
             <motion.div 
               className="rounded-full relative w-10 h-10 mr-3"
-              variants={childVariants}
+              variants={ANIMATION_CONFIG.child}
             >
               <div className="rounded-full overflow-hidden w-full h-full">
                 <Image
-                  src="/char.png"
+                  src={PROFILE_DATA.avatar}
                   alt="User Avatar"
                   width={40}
                   height={40}
@@ -82,27 +93,26 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
                   priority
                 />
               </div>
-              {/* Online indicator dot */}
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white/10 z-10"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white/10 z-10" />
             </motion.div>
             
             <div className="flex-grow">
               <motion.h1 
                 className="font-medium text-white/90 text-base"
-                variants={childVariants}
+                variants={ANIMATION_CONFIG.child}
               >
-                Sagnik Sahoo
+                {PROFILE_DATA.name}
               </motion.h1>
               <motion.p 
                 className="text-white/50 text-xs"
-                variants={childVariants}
+                variants={ANIMATION_CONFIG.child}
               >
-                Developer
+                {PROFILE_DATA.title}
               </motion.p>
             </div>
 
             <motion.button
-              variants={childVariants}
+              variants={ANIMATION_CONFIG.child}
               className="ml-auto px-3 py-1.5 text-xs font-medium text-white 
               bg-gradient-to-b from-blue-500 to-blue-700 
               border-b-2 border-blue-900
@@ -114,9 +124,7 @@ const CompactHeader = memo(({ isVisible }: CompactHeaderProps) => {
               rounded-md transition-all duration-150 
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
               flex items-center gap-1.5"
-              onClick={() => {
-                window.open('https://x.com/heysagnik', '_blank');
-              }}
+              onClick={handleFollowClick}
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />

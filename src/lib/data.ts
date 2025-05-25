@@ -23,15 +23,16 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
       content: "",
       photos: [
         {
-          src: "/hello.jpg",
+          src: "/me.jpg",
           alt: "Sagnik's photo",
+          caption: "Giving a small talk"
           
         },
-        {
-          src: "/char.png",
-          alt: "Sagnik's second photo",
-         
-        },
+        // {
+        //   src: "/me3.jpg",
+        //   alt: "Sagnik's second photo",
+        //   caption: "Mirror selfie vibes",
+        // },
       ],
       type: "photos",
       sender: "assistant",
@@ -51,13 +52,13 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
     },
     {
       id: "2.1",
-      content: "ppl say i'm a typescript wiz.",
+      content: "ppl say i'm good at crafting interfaces",
       type: "text",
       sender: "assistant",
     },
     {
       id: "2.2",
-      content: "also kinda obsessed w/ language specs & compiler internals tbh.",
+      content: "also kinda obsessed w/ hardware & embedded systems tbh.",
       type: "text",
       sender: "assistant",
     },
@@ -70,7 +71,7 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
     },
     {
       id: "4",
-      content: "music's my vibe. heavy into drum & bass.",
+      content: "music's my vibe. heavy into 90's bollywood.",
       type: "text",
       sender: "assistant",
     },
@@ -87,80 +88,87 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
       sender: "assistant",
     },
     {
-      id: "4.3", // Was 4.1
+      id: "4.3",
       content: "",
       type: "music",
       sender: "assistant",
-    },
-    {
-      id: "5",
-      content: "based in haldia rn.",
-      type: "text",
-      sender: "assistant",
-    },
-    {
-      id: "5.1",
-      content: "",
-      type: "location",
-      location: {
-        city: "Haldia, WB, India",
+        },
+          {
+        id: "5",
+        content: "based in india rn.",
+        type: "text",
+        sender: "assistant",
+          },
+          {
+        id: "5.1",
+        content: "",
+        type: "location",
+        location: {
+          city: "Haldia, WB, India",
+        },
+        sender: "assistant",
+          },
+          {
+        id: "6",
+        content: "some projects i've been cookin up:",
+        type: "text",
+        sender: "assistant",
+          },
+          {
+        id: "6.1",
+        type: "photos",
+        photos: [
+          {
+            src: '/diy-analytics.png',
+            alt: "Analytics"
+          }
+          ],
+          sender: "assistant",
+          content: ""
+        },
+        {
+          id: "6.2",
+          type: "text",
+          content: "**diy-analytics**\n\nno cap this analytics service hits different. self-host in 3 clicks & own your data fr.\n\nTechnologies: Next.js, Tailwind, MongoDB",
+          sender: "assistant"
+        },
+        {
+          id: "6.3",
+          type: "text",
+          content: "check it out on github:\n\n https://github.com/heysagnik/diy-analytics",
+          sender: "assistant"
+        },
+        {
+          id: "6.4",
+          type: "photos",
+          photos: [
+          {
+            src: "/chikki.mp4",
+            poster: "/chikki2.png",
+            alt: "Chikki - A writing assistant"
+          }
+        ],
+        sender: "assistant",
+        content: ""
+          },
+          {
+        id: "6.5",
+        type: "text",
+        content: "**chikki**\n\nwriting assistant chrome extension that's actually fire. doesn't replace ur voice - just makes it cleaner. like having a friend proofread but way faster ngl.\n\nTechnologies: Chrome Extensions API, TypeScript, AI",
+        sender: "assistant"
+          },
+          {
+        id: "6.6",
+        type: "text",
+        content: "join the waitlist : https://chikkiai.vercel.app/ \n\ncheck it out on github https://github.com/heysagnik/chikki",
+        sender: "assistant"
+          },
+          {
+        id: "6.7",
+        type: "text",
+        content: "rest projects you can find here:\n\nhttps://read.cv/heysagnik",
+        sender: "assistant"
       },
-      sender: "assistant",
-    },
-    {
-      id: "6",
-      content: "some projects i've been cookin up:",
-      type: "text",
-      sender: "assistant",
-    },
-    {
-      id: "6.1",
-      type: "photos",
-      photos: [
-        {
-          src: "/hello.mp4", // Using project image as photo
-          alt: "Portfolio Website preview"
-        }
-      ],
-      sender: "assistant",
-      content: ""
-    },
-    {
-      id: "6.2",
-      type: "text",
-      content: "Portfolio Website\n\nA personal portfolio built with Next.js and Tailwind CSS\n\nTechnologies: Next.js, Tailwind, TypeScript",
-      sender: "assistant"
-    },
-    {
-      id: "6.3",
-      type: "text",
-      content: "this is the site you're on rn, lol.",
-      sender: "assistant"
-    },
-    {
-      id: "6.4",
-      type: "photos",
-      photos: [
-        {
-          src: "/hello.jpg", // Using project image as photo
-          alt: "Chat Application preview"
-        }
-      ],
-      sender: "assistant",
-      content: ""
-    },
-    {
-      id: "6.5",
-      type: "text",
-      content: "Chat Application\n\nA real-time chat application built with React and Firebase\n\nTechnologies: React, Firebase, TypeScript",
-      sender: "assistant"
-    },
-    {
-      id: "6.6",
-      type: "text",
-      content: "check it out on github https://github.com/heysagnik", // Using GitHub as fallback since no demo URL
-      sender: "assistant"
-    },
     {
       id: "7",
       content: "hmu if u wanna connect.",

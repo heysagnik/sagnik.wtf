@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './header';
-import Message from './message-bubble';
+import MessageBubble from './message-bubble';
 import type { MessageType } from '@/lib/types';
 
 interface MessageListProps {
@@ -10,14 +10,25 @@ interface MessageListProps {
   skipAnimation?: boolean; 
 }
 
+const ANIMATION_CONFIG = {
+  initial: { opacity: 0, y: 15 },
+  animate: { opacity: 1, y: 0 },
+  transition: { 
+    type: "spring", 
+    stiffness: 260, 
+    damping: 20, 
+    duration: 0.4 
+  }
+} as const;
+
 /**
  * MessageList component displays a list of messages with proper spacing and animations
  */
-const MessageList = memo(({ 
+const MessageList = memo<MessageListProps>(({ 
   messages, 
   onTimestampVisibilityChange, 
   skipAnimation = false 
-}: MessageListProps) => {
+}) => {
   // Deduplicate messages by ID
   const uniqueMessages = useMemo(() => 
     [...new Map(messages.map(msg => [msg.id, msg])).values()],
@@ -25,14 +36,11 @@ const MessageList = memo(({
   );
   
   // Calculate message display properties
-  const messageDisplayProps = useMemo(() => 
-    uniqueMessages.map((message, index) => {
-      return {
-        message,
-        key: message.id || `msg-${index}`
-      };
-    }),
-    [uniqueMessages]
+  const animationProps = useMemo(() => 
+    skipAnimation 
+      ? { initial: { opacity: 1, y: 0 }, transition: { duration: 0 } }
+      : ANIMATION_CONFIG,
+    [skipAnimation]
   );
   
   return (
@@ -49,20 +57,13 @@ const MessageList = memo(({
       {/* Messages container */}
       <div className="space-y-3 sm:space-y-4 md:space-y-5 mt-auto">
         <AnimatePresence mode="sync">
-          {messageDisplayProps.map(({ message, key }) => (
+          {uniqueMessages.map((message, index) => (
             <motion.div 
-              key={key}
+              key={message.id || `msg-${index}`}
               className="w-full"
-              initial={skipAnimation ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 260, 
-                damping: 20, 
-                duration: skipAnimation ? 0 : 0.4 
-              }}
+              {...animationProps}
             >
-              <Message message={message} />
+              <MessageBubble message={message} />
             </motion.div>
           ))}
         </AnimatePresence>
