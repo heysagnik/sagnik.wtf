@@ -3,14 +3,13 @@
 import React, { useEffect, Suspense, lazy, Children } from 'react';
 import { motion } from 'framer-motion';
 import NextLink from 'next/link';
-import { CornerUpLeft} from 'lucide-react'; // Added LinkIcon
+import { CornerUpLeft } from 'lucide-react';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import { Components } from 'react-markdown';
 
-// Lazy-load markdown components
 const ReactMarkdown = lazy(() => import('react-markdown'));
 
 interface BlogPostContentProps {
@@ -19,33 +18,66 @@ interface BlogPostContentProps {
   fromHome: boolean;
 }
 
-// Minimal skeleton loader for markdown content
-function Skeleton() {
-  return (
-    <div className="space-y-6 animate-pulse">
-      <div className="h-8 bg-neutral-800 rounded-sm w-full max-w-[80%]" /> {/* Title line */}
-      <div className="h-4 bg-neutral-800 rounded-sm w-full max-w-[40%] mb-8" /> {/* Date line */}
-      
-      <div className="h-5 bg-neutral-800 rounded-sm w-full" /> {/* Paragraph lines */}
-      <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[95%]" />
-      <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[90%] mb-5" />
+const ANIMATION_CONFIG = {
+  container: {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.35, ease: "easeOut" }
+  },
+  article: {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay: 0.1, duration: 0.4 }
+  }
+} as const;
 
-      <div className="h-6 bg-neutral-800 rounded-sm w-full max-w-[60%] mt-10 mb-3" /> {/* H2 line */}
-      <div className="h-5 bg-neutral-800 rounded-sm w-full" />
-      <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[95%]" />
+const STYLES = {
+  container: "bg-neutral-950 w-full h-screen overflow-y-auto antialiased text-neutral-300 font-sans flex flex-col items-center",
+  wrapper: "w-full px-4 py-10 md:py-16",
+  content: "max-w-lg w-full mx-auto",
+  backLink: "inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors duration-150",
+  article: "pb-16 md:pb-24",
+  header: "mb-8 md:mb-10",
+  title: "text-2xl md:text-3xl font-semibold text-neutral-100 mb-4",
+  date: "text-neutral-500 text-xs",
+  markdown: "text-sm md:text-base"
+} as const;
 
-      <div className="h-32 bg-neutral-800 rounded-lg w-full mt-6" /> {/* Code block */}
-    </div>
-  );
-}
-
-// Function to generate a slug from text
-const generateSlug = (text: string) => {
+const generateSlug = (text: string): string => {
   return String(text)
     .toLowerCase()
-    .replace(/\s+/g, '-') // Replace spaces with -
-    .replace(/[^\w-]+/g, ''); // Remove all non-word chars
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '');
 };
+
+const extractTextContent = (children: React.ReactNode): string => {
+  let textContent = '';
+  Children.forEach(children, child => {
+    if (typeof child === 'string') {
+      textContent += child;
+    } else if (React.isValidElement(child) && child.props) {
+      const childProps = child.props as { children?: string };
+      if (typeof childProps.children === 'string') {
+        textContent += childProps.children;
+      }
+    }
+  });
+  return textContent;
+};
+
+const Skeleton = () => (
+  <div className="space-y-6 animate-pulse">
+    <div className="h-8 bg-neutral-800 rounded-sm w-full max-w-[80%]" />
+    <div className="h-4 bg-neutral-800 rounded-sm w-full max-w-[40%] mb-8" />
+    <div className="h-5 bg-neutral-800 rounded-sm w-full" />
+    <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[95%]" />
+    <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[90%] mb-5" />
+    <div className="h-6 bg-neutral-800 rounded-sm w-full max-w-[60%] mt-10 mb-3" />
+    <div className="h-5 bg-neutral-800 rounded-sm w-full" />
+    <div className="h-5 bg-neutral-800 rounded-sm w-full max-w-[95%]" />
+    <div className="h-32 bg-neutral-800 rounded-lg w-full mt-6" />
+  </div>
+);
 
 const customMarkdownComponents: Components = {
   h1: ({ children, ...props }) => (
@@ -54,20 +86,7 @@ const customMarkdownComponents: Components = {
     </h1>
   ),
   h2: ({ children, ...props }) => {
-    let textContent = '';
-    if (children) {
-      Children.forEach(children, child => {
-        if (typeof child === 'string') {
-          textContent += child;
-        } else if (
-          React.isValidElement(child) &&
-          child.props &&
-          typeof (child.props as { children?: unknown }).children === 'string'
-        ) {
-          textContent += (child.props as { children?: string }).children;
-        }
-      });
-    }
+    const textContent = extractTextContent(children);
     const slug = generateSlug(textContent || `section-${Math.random().toString(36).substring(7)}`);
     return (
       <h2 id={slug} className="group relative text-xl md:text-2xl font-semibold text-neutral-100 mb-3 mt-8 md:mt-10" {...props}>
@@ -136,7 +155,6 @@ const customMarkdownComponents: Components = {
     </pre>
   ),
   img: ({ src, alt, ...props }) => (
-    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} className="rounded-md my-8 max-w-full h-auto" {...props} />
   ),
   hr: ({ ...props }) => <hr className="border-neutral-800 my-10" {...props} />,
@@ -172,12 +190,7 @@ const customMarkdownComponents: Components = {
   em: ({ children, ...props }) => <em className="italic text-neutral-200" {...props}>{children}</em>,
 };
 
-
-export default function BlogPostContent({
-  post,
-  date,
-  fromHome,
-}: BlogPostContentProps) {
+export default function BlogPostContent({ post, date, fromHome }: BlogPostContentProps) {
   useEffect(() => {
     if (fromHome) {
       const timer = setTimeout(() => {
@@ -187,45 +200,40 @@ export default function BlogPostContent({
     }
   }, [fromHome]);
   
+  const containerAnimation = fromHome ? ANIMATION_CONFIG.container : { initial: { opacity: 1, y: 0 } };
+  const articleAnimation = fromHome ? ANIMATION_CONFIG.article : { initial: { opacity: 1, y: 0 } };
+  
   return (
-    <div className="bg-neutral-950 w-full h-screen overflow-y-auto antialiased text-neutral-300 font-sans flex flex-col items-center">
+    <div className={STYLES.container}>
       <motion.div
-        className="w-full px-4 py-10 md:py-16" // Adjusted padding
-        initial={fromHome ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }} // Adjusted animation
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }} // Adjusted animation
+        className={STYLES.wrapper}
+        {...containerAnimation}
       >
-        <div className="max-w-lg w-full mx-auto"> {/* Changed max-width */}
-          <div className="mb-10 md:mb-12"> {/* Adjusted margin */}
-            <NextLink
-              href="/?from=blog"
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors duration-150" // Smaller text
-            >
-              <CornerUpLeft size={14} /> {/* Slightly smaller icon */}
+        <div className={STYLES.content}>
+          <div className="mb-10 md:mb-12">
+            <NextLink href="/?from=blog" className={STYLES.backLink}>
+              <CornerUpLeft size={14} />
               <span className='italic'>Back</span>
             </NextLink>
           </div>
 
           <motion.article
-            initial={fromHome ? { opacity: 0, y: 15 } : { opacity: 1, y: 0 }} // Adjusted animation
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }} // Adjusted animation
-            className="pb-16 md:pb-24"  // Adjusted padding
+            {...articleAnimation}
+            className={STYLES.article}
           >
-            <header className="mb-8 md:mb-10"> {/* Adjusted margin */}
-              {/* Page Title - Minimal Styling */}
-              <h1 className="text-2xl md:text-3xl font-semibold text-neutral-100 mb-4">
+            <header className={STYLES.header}>
+              <h1 className={STYLES.title}>
                 {post.title}
               </h1>
               {date && (
-                <p className="text-neutral-500 text-xs"> {/* Smaller date text */}
+                <p className={STYLES.date}>
                   {date}
                 </p>
               )}
             </header>
 
             <Suspense fallback={<Skeleton />}>
-              <div className="text-sm md:text-base"> {/* Adjusted base font size for content */}
+              <div className={STYLES.markdown}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeHighlight]}

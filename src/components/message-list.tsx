@@ -11,51 +11,63 @@ interface MessageListProps {
 }
 
 const ANIMATION_CONFIG = {
-  initial: { opacity: 0, y: 15 },
-  animate: { opacity: 1, y: 0 },
-  transition: { 
-    type: "spring", 
-    stiffness: 260, 
-    damping: 20, 
-    duration: 0.4 
+  default: {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0 },
+    transition: { 
+      type: "spring", 
+      stiffness: 260, 
+      damping: 20, 
+      duration: 0.4 
+    }
+  },
+  skip: {
+    initial: { opacity: 1, y: 0 },
+    transition: { duration: 0 }
   }
 } as const;
 
-/**
- * MessageList component displays a list of messages with proper spacing and animations
- */
+const SPACING_CONFIG = {
+  top: "h-16 sm:h-20 md:h-24",
+  header: "mb-8",
+  headerBottom: "h-8 sm:h-12 md:h-16 lg:h-20 xl:h-24",
+  messages: "space-y-3 sm:space-y-4 md:space-y-5",
+  bottom: "h-6 sm:h-8 md:h-10"
+} as const;
+
+const useUniqueMessages = (messages: MessageType[]) => {
+  return useMemo(() => 
+    [...new Map(messages.map(msg => [msg.id, msg])).values()],
+    [messages]
+  );
+};
+
+const useAnimationProps = (skipAnimation: boolean) => {
+  return useMemo(() => 
+    skipAnimation ? ANIMATION_CONFIG.skip : ANIMATION_CONFIG.default,
+    [skipAnimation]
+  );
+};
+
 const MessageList = memo<MessageListProps>(({ 
   messages, 
   onTimestampVisibilityChange, 
   skipAnimation = false 
 }) => {
-  // Deduplicate messages by ID
-  const uniqueMessages = useMemo(() => 
-    [...new Map(messages.map(msg => [msg.id, msg])).values()],
-    [messages]
-  );
-  
-  // Calculate message display properties
-  const animationProps = useMemo(() => 
-    skipAnimation 
-      ? { initial: { opacity: 1, y: 0 }, transition: { duration: 0 } }
-      : ANIMATION_CONFIG,
-    [skipAnimation]
-  );
+  const uniqueMessages = useUniqueMessages(messages);
+  const animationProps = useAnimationProps(skipAnimation);
   
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col">
-      {/* Top spacing area */}
-      <div className="h-16 sm:h-20 md:h-24 flex-shrink-0"></div>
+      <div className={`${SPACING_CONFIG.top} flex-shrink-0`} />
       
-      {/* Header section */}
-      <div className="mb-8 relative">
+      <div className={`${SPACING_CONFIG.header} relative`}>
         <Header onTimestampVisibilityChange={onTimestampVisibilityChange} />
       </div>
-      <div className="h-8 sm:h-12 md:h-16 lg:h-20 xl:h-24 flex-shrink-0"></div>
       
-      {/* Messages container */}
-      <div className="space-y-3 sm:space-y-4 md:space-y-5 mt-auto">
+      <div className={`${SPACING_CONFIG.headerBottom} flex-shrink-0`} />
+      
+      <div className={`${SPACING_CONFIG.messages} mt-auto`}>
         <AnimatePresence mode="sync">
           {uniqueMessages.map((message, index) => (
             <motion.div 
@@ -68,8 +80,7 @@ const MessageList = memo<MessageListProps>(({
           ))}
         </AnimatePresence>
         
-        {/* Bottom spacing */}
-        <div className="h-6 sm:h-8 md:h-10 flex-shrink-0"></div>
+        <div className={`${SPACING_CONFIG.bottom} flex-shrink-0`} />
       </div>
     </div>
   );

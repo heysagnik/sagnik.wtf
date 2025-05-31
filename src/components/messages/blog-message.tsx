@@ -7,6 +7,10 @@ interface BlogItemType {
   link?: string;
 }
 
+const HOVER_ROTATION_MULTIPLIER = 10;
+const HOVER_SCALE = 1.02;
+const ANIMATION_DURATION = "0.2s";
+
 export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -18,15 +22,13 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * 10;
-    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * 10;
+    const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * HOVER_ROTATION_MULTIPLIER;
+    const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * HOVER_ROTATION_MULTIPLIER;
     
     setRotation({ x: rotateX, y: rotateY });
   }, []);
   
-  const handleMouseEnter = useCallback(() => {
-    setIsHovering(true);
-  }, []);
+  const handleMouseEnter = useCallback(() => setIsHovering(true), []);
   
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
@@ -36,40 +38,32 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
   const handleBlogClick = useCallback(() => {
     if (!blog.link) return;
     
-    // Prepare URL with the 'from' parameter
     const separator = blog.link.includes('?') ? '&' : '?';
     const linkWithParam = `${blog.link}${separator}from=home`;
-    
     window.location.href = linkWithParam;
   }, [blog.link]);
 
-  // Card transform style derived from state
   const cardTransformStyle = useMemo(() => ({
     transform: isHovering
-      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)` 
+      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${HOVER_SCALE})` 
       : 'rotateX(0deg) rotateY(0deg) scale(1)',
-    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
+    transition: `transform ${ANIMATION_DURATION} ease-out`
   }), [isHovering, rotation.x, rotation.y]);
 
-  // Content transform style
-  const contentTransformStyle = useMemo(() => ({
-    transform: isHovering ? 'translateZ(10px)' : 'translateZ(0)',
-    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
+  const getTransform3D = useCallback((translateZ: number) => ({
+    transform: isHovering ? `translateZ(${translateZ}px)` : 'translateZ(0)',
+    transition: `transform ${ANIMATION_DURATION} ease-out`
   }), [isHovering]);
 
-  // Icon transform style
-  const iconTransformStyle = useMemo(() => ({
-    transform: isHovering ? 'translateZ(20px)' : 'translateZ(0)',
-    transition: 'transform 0.2s ease-out' // Kept for hover effect, remove if not desired
-  }), [isHovering]);
+  const contentTransformStyle = useMemo(() => getTransform3D(10), [getTransform3D]);
+  const iconTransformStyle = useMemo(() => getTransform3D(20), [getTransform3D]);
 
   return (
     <motion.div
       ref={cardRef}
       className={`
-        group relative
+        group relative [perspective:800px]
         ${blog.link ? 'cursor-pointer' : ''}
-        [perspective:800px]
       `}
       onClick={handleBlogClick}
       onMouseMove={handleMouseMove}
@@ -77,17 +71,15 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
       onMouseLeave={handleMouseLeave}
     >
       <div
-        className={`
-          relative rounded-xl p-3
-          bg-[#1A1A1A]
-          hover:shadow-lg
-          transition-all duration-200 ease-out // Kept for hover effect, remove if not desired
+        className="
+          relative rounded-xl p-3 bg-[#1A1A1A]
+          hover:shadow-lg transition-all duration-200 ease-out
           [transform-style:preserve-3d]
-        `}
+        "
         style={cardTransformStyle}
       >
         <div 
-          className="relative transition-transform duration-300 ease-out" // Kept for hover effect, remove if not desired
+          className="relative transition-transform duration-300 ease-out"
           style={contentTransformStyle}
         >
           <h3 className="text-white-100 text-sm font-semibold line-clamp-2 pr-7">
@@ -100,13 +92,26 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
 
         {blog.link && (
           <div
-            className="absolute top-2.5 right-2.5 text-slate-400 group-hover:text-slate-100 
-                     p-1 rounded-full group-hover:bg-slate-600/50
-                     transition-all duration-300 ease-out" // Kept for hover effect, remove if not desired
+            className="
+              absolute top-2.5 right-2.5 p-1 rounded-full
+              text-slate-400 group-hover:text-slate-100 
+              group-hover:bg-slate-600/50
+              transition-all duration-300 ease-out
+            "
             style={iconTransformStyle}
             aria-label={`Open ${blog.title}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
               <path d="M7 17l9.2-9.2M17 17V7H7" />
             </svg>
           </div>
@@ -118,20 +123,24 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
 
 BlogItem.displayName = "BlogItem";
 
-export const BlogMessage = ({ content, blogs, bubbleClass, bubbleMaxWidth }: {
+interface BlogMessageProps {
   content?: string;
   blogs?: BlogItemType[];
   bubbleClass: string;
   bubbleMaxWidth: string;
-}) => {
+}
+
+export const BlogMessage = ({ content, blogs, bubbleClass, bubbleMaxWidth }: BlogMessageProps) => {
   return (
     <div className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}>
       <div className="space-y-2">
-        {content && <p className="text-[14px] leading-tight mb-3">{content}</p>}
-        {blogs && blogs.length > 0 && (
+        {content && (
+          <p className="text-[14px] leading-tight mb-3">{content}</p>
+        )}
+        {blogs?.length && (
           <div className="space-y-2 mt-3">
             {blogs.map((blog, index) => (
-              <BlogItem key={index} blog={blog}/>
+              <BlogItem key={index} blog={blog} />
             ))}
           </div>
         )}

@@ -1,7 +1,3 @@
-/**
- * Core entity types
- */
-
 export interface Blog {
   title: string;
   description: string;
@@ -25,22 +21,16 @@ export interface Photo {
   src: string;
   alt?: string;
   caption?: string;
-  poster?: string; // For video thumbnails
+  poster?: string;
 }
 
-/**
- * Base message interface that all message types extend
- */
 interface BaseMessage {
   id: string;
   sender: "user" | "assistant";
   timestamp?: string | number;
-  reactions?: string[]; // Added reactions property for Apple-style message reactions
+  reactions?: string[];
 }
 
-/**
- * Message type-specific interfaces
- */
 export interface TextMessage extends BaseMessage {
   type: "text";
   content: string;
@@ -89,9 +79,6 @@ export interface ResumeMessage extends BaseMessage {
   resumeLinkText?: string;
 }
 
-/**
- * Union type combining all message types for use throughout the app
- */
 export type MessageType = 
   | TextMessage
   | BlogMessage
@@ -101,3 +88,23 @@ export type MessageType =
   | CTAMessage
   | PhotosMessage
   | ResumeMessage;
+
+export type MessageVariant = MessageType['type'];
+
+export type Sender = BaseMessage['sender'];
+
+export const MESSAGE_TYPES = {
+  TEXT: 'text',
+  BLOG: 'blog',
+  PROJECT: 'project',
+  LOCATION: 'location',
+  MUSIC: 'music',
+  CTA: 'cta',
+  PHOTOS: 'photos',
+  RESUME: 'resume'
+} as const;
+
+export const SENDERS = {
+  USER: 'user',
+  ASSISTANT: 'assistant'
+} as const;

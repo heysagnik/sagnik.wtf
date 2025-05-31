@@ -5,63 +5,104 @@ import { useSearchParams } from "next/navigation";
 import SplashScreen from "@/components/splash-screen";
 import MessagingApp from "@/components/messaging-app";
 
-// Animation timing constants (in ms)
-const ANIMATION = {
-  INITIAL_DELAY: 100,
-  FINAL_TRANSITION: 1000,
+const ANIMATION_CONFIG = {
+  splashDuration: 2000,
+  transitionDuration: 1000,
+} as const;
+
+const NAVIGATION_SOURCES = {
+  HOME: 'home',
+  BLOG: 'blog'
+} as const;
+
+const useSplashScreenState = () => {
+  const [showSplashScreen, setShowSplashScreen] = useState(true);
+  const [fadeSplashScreen, setFadeSplashScreen] = useState(false);
+  const splashTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startSplashSequence = () => {
+    splashTimerRef.current = setTimeout(() => {
+      setFadeSplashScreen(true);
+    }, ANIMATION_CONFIG.splashDuration);
+  };
+
+  const startTransition = () => {
+    if (!transitionTimerRef.current) {
+      transitionTimerRef.current = setTimeout(() => {
+        setShowSplashScreen(false);
+      }, ANIMATION_CONFIG.transitionDuration);
+    }
+  };
+
+  const skipSplash = () => {
+    setShowSplashScreen(false);
+  };
+
+  const cleanup = () => {
+    if (splashTimerRef.current) {
+      clearTimeout(splashTimerRef.current);
+      splashTimerRef.current = null;
+    }
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+  };
+
+  return {
+    showSplashScreen,
+    fadeSplashScreen,
+    startSplashSequence,
+    startTransition,
+    skipSplash,
+    cleanup
+  };
+};
+
+const useNavigationCheck = () => {
+  const searchParams = useSearchParams();
+  const [skipIntroAnimation, setSkipIntroAnimation] = useState(false);
+
+  const shouldSkipAnimation = () => {
+    const fromParam = searchParams.get('from');
+    return fromParam === NAVIGATION_SOURCES.HOME || fromParam === NAVIGATION_SOURCES.BLOG;
+  };
+
+  return { skipIntroAnimation, setSkipIntroAnimation, shouldSkipAnimation };
 };
 
 export default function HomePageContent() {
-  const searchParams = useSearchParams();
-  const [showSplashScreen, setShowSplashScreen] = useState(true);
-  const [fadeSplashScreen, setFadeSplashScreen] = useState(false);
-  const splashScreenTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [skipIntroAnimation, setSkipIntroAnimation] = useState(false);
+  const { skipIntroAnimation, setSkipIntroAnimation, shouldSkipAnimation } = useNavigationCheck();
+  const { 
+    showSplashScreen, 
+    fadeSplashScreen, 
+    startSplashSequence, 
+    startTransition, 
+    skipSplash, 
+    cleanup 
+  } = useSplashScreenState();
 
-  // Check if user is navigating within the same domain based on query parameter
   useEffect(() => {
-    const fromParam = searchParams.get('from');
-    
-    if (fromParam === 'home' || fromParam === 'blog') {
-      setShowSplashScreen(false);
+    if (shouldSkipAnimation()) {
+      skipSplash();
       setSkipIntroAnimation(true);
-      console.log("Skipping animations due to navigation from within site, fromParam:", fromParam);
     }
-  }, [searchParams]);
+  }, [shouldSkipAnimation, skipSplash, setSkipIntroAnimation]);
   
-  // Transition from splash screen to messaging app
   useEffect(() => {
     if (showSplashScreen && !fadeSplashScreen) {
-      console.log("Starting splash screen sequence");
-      splashScreenTimerRef.current = setTimeout(() => {
-        console.log("Starting fade out animation");
-        setFadeSplashScreen(true);
-      }, 2000); // Time to display splash screen
+      startSplashSequence();
     }
-    
-    return () => {
-      if (splashScreenTimerRef.current) {
-        clearTimeout(splashScreenTimerRef.current);
-        splashScreenTimerRef.current = null;
-      }
-    };
-  }, [showSplashScreen, fadeSplashScreen]);
+    return cleanup;
+  }, [showSplashScreen, fadeSplashScreen, startSplashSequence, cleanup]);
 
   useEffect(() => {
-    if (fadeSplashScreen && !transitionTimerRef.current) {
-      transitionTimerRef.current = setTimeout(() => {
-        setShowSplashScreen(false);
-      }, ANIMATION.FINAL_TRANSITION);
+    if (fadeSplashScreen) {
+      startTransition();
     }
-    
-    return () => {
-      if (transitionTimerRef.current) {
-        clearTimeout(transitionTimerRef.current);
-        transitionTimerRef.current = null;
-      }
-    };
-  }, [fadeSplashScreen]);
+    return cleanup;
+  }, [fadeSplashScreen, startTransition, cleanup]);
 
   return (
     <main className="h-full w-full flex justify-center bg-black overflow-hidden">

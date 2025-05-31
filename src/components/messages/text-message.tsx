@@ -3,37 +3,94 @@ import { motion } from 'framer-motion';
 import { MessageReaction } from './message-reaction';
 import { ReactionAnimation } from './reaction-animation';
 
-// Regex pattern for URLs
 const URL_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
 
-// Regex patterns for basic markdown
-const MD_PATTERNS = {
+const MARKDOWN_PATTERNS = {
   BOLD: /\*\*(.*?)\*\*|__(.*?)__/g,
   ITALIC: /\*(.*?)\*|_(.*?)_/g,
   CODE: /`([^`]+)`/g,
   LINK: /\[([^\]]+)\]\(([^)]+)\)/g,
   HEADER: /^(#{1,3})\s+(.+)$/gm
-};
+} as const;
 
-export const TextMessage = ({
-  content,
-  bubbleClass,
-  bubbleMaxWidth
-}: {
+const LONG_PRESS_DURATION = 500;
+const MAX_URL_DISPLAY_LENGTH = 35;
+
+const HEADER_CLASSES = {
+  1: "text-xl font-bold my-1.5",
+  2: "text-lg font-bold my-1",
+  3: "text-base font-semibold my-0.5"
+} as const;
+
+interface TextMessageProps {
   content: string;
   bubbleClass: string;
   bubbleMaxWidth: string;
-}) => {
-  // State for handling reactions
+}
+
+const useReactions = () => {
   const [showReactions, setShowReactions] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  
-  // New state for animation
   const [showAnimation, setShowAnimation] = useState(false);
   const [animatingEmoji, setAnimatingEmoji] = useState<string | null>(null);
 
-  // Helper function to process regex matches on text parts
+  const handleSelectReaction = (reaction: string) => {
+    setShowReactions(false);
+    
+    setTimeout(() => {
+      setAnimatingEmoji(reaction);
+      setShowAnimation(true);
+      setSelectedReaction(reaction);
+    }, 50);
+  };
+
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
+    setAnimatingEmoji(null);
+  };
+
+  return {
+    showReactions,
+    selectedReaction,
+    showAnimation,
+    animatingEmoji,
+    setShowReactions,
+    handleSelectReaction,
+    handleAnimationComplete
+  };
+};
+
+const useLongPress = (onLongPress: () => void) => {
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = () => {
+    const timer = setTimeout(onLongPress, LONG_PRESS_DURATION);
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  return { handleTouchStart, handleTouchEnd };
+};
+
+export const TextMessage = ({ content, bubbleClass, bubbleMaxWidth }: TextMessageProps) => {
+  const {
+    showReactions,
+    selectedReaction,
+    showAnimation,
+    animatingEmoji,
+    setShowReactions,
+    handleSelectReaction,
+    handleAnimationComplete
+  } = useReactions();
+
+  const { handleTouchStart, handleTouchEnd } = useLongPress(() => setShowReactions(true));
+
   const processRegex = useCallback(
     (
       parts: Array<string | React.ReactNode>,
@@ -44,7 +101,6 @@ export const TextMessage = ({
       let nodeCounter = 0;
       
       for (const part of parts) {
-        // Skip parts that are already React nodes
         if (typeof part !== 'string') {
           result.push(part);
           continue;
@@ -54,7 +110,6 @@ export const TextMessage = ({
         const text = part;
         let match;
         
-        // Reset regex
         regex.lastIndex = 0;
         
         while ((match = regex.exec(text)) !== null) {
@@ -62,7 +117,6 @@ export const TextMessage = ({
             result.push(text.substring(lastIndex, match.index));
           }
           
-          // Create the React node for the matched pattern with unique index
           const capturedGroups = match.slice(1);
           result.push(createNode(match[0], ...capturedGroups, nodeCounter++));
           
@@ -79,16 +133,14 @@ export const TextMessage = ({
     []
   );
 
-  // Process a single line of text for inline formatting
   const processLine = useCallback(
     (text: string, parentKey: string): React.ReactNode[] => {
       let parts: Array<string | React.ReactNode> = [text];
+      const isUserBubble = bubbleClass.includes('bubble-sent');
       
-      // Process code blocks
-      parts = processRegex(parts, MD_PATTERNS.CODE, (match, ...rest) => {
+      parts = processRegex(parts, MARKDOWN_PATTERNS.CODE, (match, ...rest) => {
         const idx = rest.pop() as number;
         const codeContent = rest[0];
-        const isUserBubble = bubbleClass.includes('bubble-sent');
         return (
           <code key={`${parentKey}-code-${idx}`} className={`px-1.5 py-0.5 rounded text-[15px] font-mono ${
             isUserBubble 
@@ -100,13 +152,11 @@ export const TextMessage = ({
         );
       });
       
-      // Process links (both markdown and plain URLs)
-      parts = processRegex(parts, MD_PATTERNS.LINK, (match, ...rest) => {
+      parts = processRegex(parts, MARKDOWN_PATTERNS.LINK, (match, ...rest) => {
         const idx = rest.pop() as number;
         const [linkText = "", url = ""] = rest.map(item => 
           typeof item === 'string' ? item : String(item || '')
         );
-        const isUserBubble = bubbleClass.includes('bubble-sent');
         
         return (
           <a 
@@ -125,13 +175,10 @@ export const TextMessage = ({
         );
       });
       
-      // Process URLs that aren't already in markdown link format
       parts = processRegex(parts, URL_REGEX, (match, ...rest) => {
         const idx = rest.pop() as number;
-        const isUserBubble = bubbleClass.includes('bubble-sent');
-        
         const url = match.startsWith('http') ? match : `https://${match}`;
-        const displayUrl = match.length > 35 ? `${match.substring(0, 32)}...` : match;
+        const displayUrl = match.length > MAX_URL_DISPLAY_LENGTH ? `${match.substring(0, 32)}...` : match;
         
         return (
           <a 
@@ -150,8 +197,7 @@ export const TextMessage = ({
         );
       });
       
-      // Process bold text
-      parts = processRegex(parts, MD_PATTERNS.BOLD, (match, ...rest) => {
+      parts = processRegex(parts, MARKDOWN_PATTERNS.BOLD, (match, ...rest) => {
         const idx = rest.pop() as number;
         const content1 = rest[0];
         const content2 = rest[1];
@@ -162,8 +208,7 @@ export const TextMessage = ({
         );
       });
       
-      // Process italic text
-      parts = processRegex(parts, MD_PATTERNS.ITALIC, (match, ...rest) => {
+      parts = processRegex(parts, MARKDOWN_PATTERNS.ITALIC, (match, ...rest) => {
         const idx = rest.pop() as number;
         const content1 = rest[0];
         const content2 = rest[1];
@@ -174,7 +219,6 @@ export const TextMessage = ({
         );
       });
       
-      // Add keys to any remaining string parts
       return parts.map((part, idx) => {
         if (typeof part === 'string') {
           return <span key={`${parentKey}-text-${idx}`}>{part}</span>;
@@ -185,36 +229,29 @@ export const TextMessage = ({
     [processRegex, bubbleClass]
   );
 
-  // Process text to render markdown and links
   const formatMessage = useCallback(
     (text: string): React.ReactNode[] => {
       try {
-        // First, split by line breaks to handle them properly
         const lines = text.split('\n');
         
         return lines.map((line, lineIndex) => {
-          // Skip empty lines
           if (line.trim() === '') {
             return <div key={`empty-${lineIndex}`} className="h-[0.5em]" aria-hidden="true" />;
           }
           
-          // Process headers first
           const headerMatch = line.match(/^(#{1,3})\s+(.+)$/);
           if (headerMatch) {
-            const level = headerMatch[1].length;
+            const level = headerMatch[1].length as 1 | 2 | 3;
             const headerContent = processLine(headerMatch[2], `header-${lineIndex}`);
-            
-            const headerClasses = {
-              1: "text-xl font-bold my-1.5",
-              2: "text-lg font-bold my-1",
-              3: "text-base font-semibold my-0.5"
-            };
-            
             const HeaderTag = `h${level}` as keyof JSX.IntrinsicElements;
-            return <HeaderTag key={`h${level}-${lineIndex}`} className={headerClasses[level as 1|2|3]}>{headerContent}</HeaderTag>;
+            
+            return (
+              <HeaderTag key={`h${level}-${lineIndex}`} className={HEADER_CLASSES[level]}>
+                {headerContent}
+              </HeaderTag>
+            );
           }
           
-          // Process normal lines
           return (
             <div 
               key={`line-${lineIndex}`} 
@@ -231,48 +268,10 @@ export const TextMessage = ({
     },
     [processLine]
   );
-  
-  // Handle long press for mobile
-  const handleTouchStart = () => {
-    const timer = setTimeout(() => {
-      setShowReactions(true);
-    }, 500); // 500ms long press
-    setLongPressTimer(timer);
-  };
 
-  const handleTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  };
-
-  // Handle right click for desktop
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setShowReactions(true);
-  };
-
-  // Handle reaction selection
-  const handleSelectReaction = (reaction: string) => {
-    // Close the reaction panel first
-    setShowReactions(false);
-    
-    // Small delay to let the panel start closing
-    setTimeout(() => {
-      // Play the animation with slight delay
-      setAnimatingEmoji(reaction);
-      setShowAnimation(true);
-      
-      // Then set the reaction on the message
-      setSelectedReaction(reaction);
-    }, 50);
-  };
-  
-  // Handle when animation completes
-  const handleAnimationComplete = () => {
-    setShowAnimation(false);
-    setAnimatingEmoji(null);
   };
   
   const formattedContent = useMemo(() => formatMessage(content), [content, formatMessage]);
@@ -297,14 +296,12 @@ export const TextMessage = ({
         border: isUserBubble ? 'none' : '1px solid rgba(0,0,0,0.05)',
       }}
     >
-      {/* Reaction bubble */}
       <MessageReaction 
         isVisible={showReactions} 
         onClose={() => setShowReactions(false)} 
         onSelectReaction={handleSelectReaction} 
       />
       
-      {/* Full-screen reaction animation */}
       {showAnimation && animatingEmoji && (
         <ReactionAnimation 
           emoji={animatingEmoji} 
@@ -312,7 +309,6 @@ export const TextMessage = ({
         />
       )}
       
-      {/* Selected reaction display */}
       {selectedReaction && (
         <motion.div 
           initial={{ scale: 0.5, opacity: 0 }}
@@ -342,13 +338,13 @@ export const TextMessage = ({
         {formattedContent}
       </div>
       
-      {/* Long press hint */}
       <div
         className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-50 text-[10px] text-gray-400 dark:text-gray-500 pointer-events-none transition-opacity`}
       >
         <span className="desktop-hint">Right click</span>
         <span className="mobile-hint">Long press</span>
       </div>
+      
       <style jsx>{`
         .desktop-hint { display: none; }
         .mobile-hint { display: inline; }
@@ -357,6 +353,7 @@ export const TextMessage = ({
           .desktop-hint { display: inline; }
           .mobile-hint { display: none; }
         }
+        
         @media (hover: hover) {
           .group:active {
             transform: scale(0.98);
@@ -375,7 +372,6 @@ export const TextMessage = ({
           }
         }
         
-        /* iOS-style pressed state for touch devices */
         @media (hover: none) {
           .group:active {
             transform: scale(0.95);

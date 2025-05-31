@@ -7,14 +7,72 @@ interface MessageInputProps {
   placeholder?: string;
 }
 
-// Replace with your email address
-const YOUR_EMAIL = "sahoosagnik1@gmail.com"; 
+const EMAIL_CONFIG = {
+  address: "sahoosagnik1@gmail.com",
+  subject: "Message from Portfolio Website"
+} as const;
 
 const ANIMATION_CONFIG = {
   tap: { scale: 0.92 },
   focus: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
-  blur: { backgroundColor: "rgba(255, 255, 255, 0.1)" }
+  blur: { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+  opacity: { duration: 0.2 },
+  background: { duration: 0.2 }
 } as const;
+
+const AppStoreIcon = memo(() => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="22" 
+    height="22" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className="text-white/80"
+  >
+    <line x1="4" y1="9" x2="20" y2="9"></line>
+    <line x1="4" y1="15" x2="20" y2="15"></line>
+    <line x1="10" y1="3" x2="8" y2="21"></line>
+    <line x1="16" y1="3" x2="14" y2="21"></line>
+  </svg>
+));
+
+AppStoreIcon.displayName = 'AppStoreIcon';
+
+const SendIcon = memo(() => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="18" 
+    height="18" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="m12 19V5"></path>
+    <path d="m5 12 7-7 7 7"></path>
+  </svg>
+));
+
+SendIcon.displayName = 'SendIcon';
+
+const AppStoreButton = memo(({ isEnabled }: { isEnabled: boolean }) => (
+  <motion.button 
+    className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70 focus:outline-none"
+    whileTap={ANIMATION_CONFIG.tap}
+    aria-label="App Store"
+    disabled={!isEnabled}
+  >
+    <AppStoreIcon />
+  </motion.button>
+));
+
+AppStoreButton.displayName = 'AppStoreButton';
 
 const MessageInput = memo<MessageInputProps>(({ 
   onSend, 
@@ -25,20 +83,22 @@ const MessageInput = memo<MessageInputProps>(({
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   
+  const createMailtoLink = useCallback((message: string) => {
+    const subject = encodeURIComponent(EMAIL_CONFIG.subject);
+    const body = encodeURIComponent(message);
+    return `mailto:${EMAIL_CONFIG.address}?subject=${subject}&body=${body}`;
+  }, []);
+  
   const handleSend = useCallback(() => {
     const trimmedValue = inputValue.trim();
     if (!trimmedValue || !isEnabled) return;
     
-    const subject = encodeURIComponent("Message from Portfolio Website");
-    const body = encodeURIComponent(trimmedValue);
-    const mailtoUrl = `mailto:${YOUR_EMAIL}?subject=${subject}&body=${body}`;
-    
-    window.location.href = mailtoUrl;
+    window.location.href = createMailtoLink(trimmedValue);
     onSend?.(trimmedValue);
     setInputValue("");
     
     setTimeout(() => inputRef.current?.focus(), 10);
-  }, [inputValue, isEnabled, onSend]);
+  }, [inputValue, isEnabled, onSend, createMailtoLink]);
   
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && isEnabled) {
@@ -52,66 +112,17 @@ const MessageInput = memo<MessageInputProps>(({
   return (
     <div className="px-3 py-2">
       <div className="flex items-center gap-2">
-        {/* Camera button */}
-        {/* <motion.button 
-          className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70"
-          whileTap={{ scale: 0.92 }}
-          aria-label="Take photo"
-          disabled={!isEnabled}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="text-white/80"
-          >
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-            <circle cx="12" cy="13" r="3"></circle>
-          </svg>
-        </motion.button> */}
-
-        {/* App Store button */}
-        <motion.button 
-          className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-white/70"
-          whileTap={ANIMATION_CONFIG.tap}
-          aria-label="App Store"
-          disabled={!isEnabled}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="22" 
-            height="22" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className="text-white/80"
-          >
-            <line x1="4" y1="9" x2="20" y2="9"></line>
-            <line x1="4" y1="15" x2="20" y2="15"></line>
-            <line x1="10" y1="3" x2="8" y2="21"></line>
-            <line x1="16" y1="3" x2="14" y2="21"></line>
-          </svg>
-        </motion.button>
+        <AppStoreButton isEnabled={isEnabled} />
         
         <motion.div 
-          className={`flex-grow flex items-center bg-white/10 rounded-full transition-all h-9 px-4
-                     ${isFocused ? 'ring-1 ring-white/10' : ''}`}
+          className="flex-grow flex items-center bg-white/10 rounded-full transition-all h-9 px-4"
           animate={isFocused && isEnabled ? ANIMATION_CONFIG.focus : ANIMATION_CONFIG.blur}
           initial={false}
-          transition={{ duration: 0.2 }}
+          transition={ANIMATION_CONFIG.background}
         >
           <input 
             ref={inputRef}
-            className="bg-transparent text-white w-full resize-none outline-none text-sm placeholder:text-white/40"
+            className="bg-transparent text-white w-full resize-none outline-none border-none text-sm placeholder:text-white/40 focus:outline-none focus:border-none focus:ring-0"
             placeholder={placeholder}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -119,13 +130,13 @@ const MessageInput = memo<MessageInputProps>(({
             onBlur={() => setIsFocused(false)}
             onKeyDown={handleKeyDown}
             disabled={!isEnabled}
+            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
           />
         </motion.div>
         
-        {/* Send button */}
         <motion.button 
           onClick={handleSend}
-          className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full ${
+          className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full focus:outline-none ${
             canSend 
               ? "bg-blue-500 text-white" 
               : "bg-white/10 text-white/40"
@@ -134,25 +145,12 @@ const MessageInput = memo<MessageInputProps>(({
           initial={false}
           animate={{ 
             opacity: isEnabled ? 1 : 0.7,
-            transition: { duration: 0.2 }
+            transition: ANIMATION_CONFIG.opacity
           }}
           aria-label="Send message"
           disabled={!canSend}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="18" 
-            height="18" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="m12 19V5"></path>
-            <path d="m5 12 7-7 7 7"></path>
-          </svg>
+          <SendIcon />
         </motion.button>
       </div>
       

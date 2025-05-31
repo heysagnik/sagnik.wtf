@@ -8,11 +8,11 @@ const Z_INDICES = {
   MODAL_CONTENT: 9995,
   MODAL_CONTROLS: 9997,
   MODAL_BACKDROP: 9985,
-};
+} as const;
 
 const ANIMATION_SETTINGS = {
   duration: 0.25,
-  ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+  ease: [0.16, 1, 0.3, 1] as const,
 };
 
 const IMAGE_SIZES = {
@@ -21,12 +21,21 @@ const IMAGE_SIZES = {
   triple: { height: "110px", minHeight: "110px" },
   quad: { height: "110px", minHeight: "110px" },
   multiple: { height: "90px", minHeight: "90px" },
-};
+} as const;
+
+const SWIPE_THRESHOLD = 0.2;
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.ogg', '.avi'];
+
+interface PhotosMessageProps {
+  content?: string;
+  photos: Photo[];
+  bubbleClass: string;
+  bubbleMaxWidth: string;
+}
 
 const isVideoFile = (src: string): boolean => {
   if (!src) return false;
-  const videoExtensions = ['.mp4', '.webm', '.mov', '.ogg', '.avi'];
-  return videoExtensions.some(ext => src.toLowerCase().endsWith(ext));
+  return VIDEO_EXTENSIONS.some(ext => src.toLowerCase().endsWith(ext));
 };
 
 const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
@@ -37,28 +46,17 @@ const chunkArray = <T,>(array: T[], chunkSize: number): T[][] => {
   return chunks;
 };
 
-interface PhotosMessageProps {
-  content?: string;
-  photos: Photo[];
-  bubbleClass: string;
-  bubbleMaxWidth: string;
-}
-
 const useImageLoading = (photos: Photo[]) => {
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [isLoaded, setIsLoaded] = useState<Record<number, boolean>>({});
   
   const handleImageError = useCallback((index: number) => {
     console.error(`Failed to load image at index ${index}:`, photos[index]?.src);
-    console.error("Check that file exists at:", photos[index]?.src);
     setImageErrors(prev => ({...prev, [index]: true}));
   }, [photos]);
   
   useEffect(() => {
-    if (!photos || photos.length === 0) {
-      console.error("PhotosMessage: No photos provided");
-      return;
-    }
+    if (!photos?.length) return;
     
     const preloadImages = async () => {
       const chunks = chunkArray([...photos], 3);
@@ -69,7 +67,6 @@ const useImageLoading = (photos: Photo[]) => {
             const actualIndex = photos.indexOf(photo);
             
             if (!photo.src) {
-              console.error(`PhotosMessage: Missing src for photo at index ${actualIndex}`);
               setImageErrors(prev => ({...prev, [actualIndex]: true}));
               return Promise.reject();
             }
@@ -171,16 +168,13 @@ const useLightbox = (photos: Photo[]) => {
   const photoGridRef = useRef<HTMLDivElement>(null);
   
   const openLightbox = useCallback((photo: Photo, index: number, imageErrors: Record<number, boolean>) => {
-    if (imageErrors[index]) {
-      return;
-    }
+    if (imageErrors[index]) return;
+    
     setLightboxPhoto(photo);
     setLightboxIndex(index);
     document.body.style.overflow = "hidden";
     
-    setTimeout(() => {
-      lightboxRef.current?.focus();
-    }, 100);
+    setTimeout(() => lightboxRef.current?.focus(), 100);
   }, []);
 
   const closeLightbox = useCallback(() => {
@@ -206,28 +200,22 @@ const useLightbox = (photos: Photo[]) => {
   }, [lightboxIndex, photos]);
   
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case "ArrowLeft":
-        navigateImage("prev");
-        e.preventDefault();
-        break;
-      case "ArrowRight":
-        navigateImage("next");
-        e.preventDefault();
-        break;
-      case "Escape":
-        closeLightbox();
-        e.preventDefault();
-        break;
+    const actions = {
+      ArrowLeft: () => navigateImage("prev"),
+      ArrowRight: () => navigateImage("next"),
+      Escape: closeLightbox,
+    };
+    
+    const action = actions[e.key as keyof typeof actions];
+    if (action) {
+      action();
+      e.preventDefault();
     }
   }, [navigateImage, closeLightbox]);
   
   const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    if ('touches' in e) {
-      setStartX(e.touches[0].clientX);
-    } else {
-      setStartX(e.clientX);
-    }
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    setStartX(clientX);
     setIsDragging(true);
   }, []);
   
@@ -251,24 +239,16 @@ const useLightbox = (photos: Photo[]) => {
   const handleTouchEnd = useCallback(() => {
     if (startX === null) return;
     
-    const threshold = window.innerWidth * 0.2;
+    const threshold = window.innerWidth * SWIPE_THRESHOLD;
     
     if (Math.abs(offsetX) > threshold) {
-      if (offsetX > 0) {
-        navigateImage("prev");
-      } else {
-        navigateImage("next");
-      }
+      navigateImage(offsetX > 0 ? "prev" : "next");
     }
     
     setStartX(null);
     setOffsetX(0);
     setIsDragging(false);
   }, [startX, offsetX, navigateImage]);
-  
-  useEffect(() => {
-    setOffsetX(0);
-  }, [lightboxIndex]);
   
   const toggleVideoPlayback = useCallback(() => {
     if (!videoRef.current) return;
@@ -282,6 +262,10 @@ const useLightbox = (photos: Photo[]) => {
       setIsVideoPlaying(false);
     }
   }, []);
+
+  useEffect(() => {
+    setOffsetX(0);
+  }, [lightboxIndex]);
 
   useEffect(() => {
     setIsVideoPlaying(false);
@@ -341,25 +325,25 @@ const PhotoGrid = ({
   setIsLoaded: React.Dispatch<React.SetStateAction<Record<number, boolean>>>
 }) => {
   const gridLayout = useMemo(() => {
-    switch (photos.length) {
-      case 1: return "grid-cols-1";
-      case 2: return "grid-cols-2";
-      case 3: return "grid-cols-[1fr_1fr_1fr]";
-      case 4: return "grid-cols-2 grid-rows-2";
-      default: return "grid-cols-3";
-    }
+    const layouts = {
+      1: "grid-cols-1",
+      2: "grid-cols-2",
+      3: "grid-cols-[1fr_1fr_1fr]",
+      4: "grid-cols-2 grid-rows-2",
+    };
+    return layouts[photos.length as keyof typeof layouts] || "grid-cols-3";
   }, [photos.length]);
   
   const getPhotoStyle = useCallback(() => {
-    let dimensions;
+    const sizeKeys = {
+      1: 'single',
+      2: 'double',
+      3: 'triple',
+      4: 'quad',
+    } as const;
     
-    switch(photos.length) {
-      case 1: dimensions = IMAGE_SIZES.single; break;
-      case 2: dimensions = IMAGE_SIZES.double; break;
-      case 3: dimensions = IMAGE_SIZES.triple; break;
-      case 4: dimensions = IMAGE_SIZES.quad; break;
-      default: dimensions = IMAGE_SIZES.multiple;
-    }
+    const sizeKey = sizeKeys[photos.length as keyof typeof sizeKeys] || 'multiple';
+    const dimensions = IMAGE_SIZES[sizeKey];
     
     return { 
       ...dimensions, 
@@ -367,6 +351,22 @@ const PhotoGrid = ({
       position: "relative" as const
     };
   }, [photos.length]);
+
+  const getRoundedCorners = useCallback((index: number) => {
+    const isFirst = index === 0;
+    const isLast = index === photos.length - 1;
+    const isTopLeft = isFirst;
+    const isTopRight = photos.length === 2 ? isLast : index === 2;
+    const isBottomLeft = photos.length === 3 ? false : photos.length === 4 && index === 2;
+    const isBottomRight = photos.length > 2 && isLast;
+    
+    return `
+      ${isTopLeft && !content ? 'rounded-tl-[16px]' : ''} 
+      ${isTopRight && !content ? 'rounded-tr-[16px]' : ''}
+      ${isBottomLeft ? 'rounded-bl-[16px]' : ''}
+      ${isBottomRight ? 'rounded-br-[16px]' : ''}
+    `;
+  }, [photos.length, content]);
   
   return (
     <div 
@@ -378,26 +378,12 @@ const PhotoGrid = ({
       aria-label={`Photo gallery with ${photos.length} photos`}
     >
       {photos.map((photo, index) => {
-        const isFirst = index === 0;
-        const isLast = index === photos.length - 1;
-        const isTopLeft = isFirst;
-        const isTopRight = photos.length === 2 ? isLast : index === 2;
-        const isBottomLeft = photos.length === 3 ? false : photos.length === 4 && index === 2;
-        const isBottomRight = photos.length > 2 && isLast;
-        
-        const roundedCorners = `
-          ${isTopLeft && !content ? 'rounded-tl-[16px]' : ''} 
-          ${isTopRight && !content ? 'rounded-tr-[16px]' : ''}
-          ${isBottomLeft ? 'rounded-bl-[16px]' : ''}
-          ${isBottomRight ? 'rounded-br-[16px]' : ''}
-        `;
-        
-        const showMoreCount = isLast && photos.length > 4 && index === 3;
+        const showMoreCount = index === 3 && photos.length > 4;
         
         return (
           <div
             key={index}
-            className={`relative overflow-hidden ${roundedCorners} bg-gray-100 dark:bg-gray-800 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
+            className={`relative overflow-hidden ${getRoundedCorners(index)} bg-gray-100 dark:bg-gray-800 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500`}
             style={getPhotoStyle()}
             onClick={() => openLightbox(photo, index)}
             onKeyDown={(e) => e.key === 'Enter' && openLightbox(photo, index)}
@@ -489,15 +475,6 @@ const PhotoGrid = ({
               </>
             ) : null}
             
-            {/* This caption block is removed from PhotoGrid
-            {photo.caption && !imageErrors[index] && (
-              <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/70 to-transparent">
-                <p className="text-white text-[10px] leading-tight truncate">
-                  {photo.caption}
-                </p>
-              </div>
-            )} */}
-            
             <div 
               className="absolute inset-0 opacity-0 hover:opacity-100 bg-white/10 transition-opacity duration-200"
               aria-hidden="true"
@@ -549,6 +526,29 @@ const PhotoLightbox = ({
   setLightboxPhoto: React.Dispatch<React.SetStateAction<Photo | null>>
 }) => {
   if (!lightboxPhoto) return null;
+
+  const NavigationButton = ({ direction, onClick }: { direction: 'prev' | 'next', onClick: () => void }) => (
+    <div 
+      className={`absolute ${direction === 'prev' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 z-[9999] pointer-events-none`}
+      style={{ zIndex: Z_INDICES.MODAL_CONTROLS }}
+    >
+      <button 
+        onClick={(e) => {
+          e.preventDefault(); 
+          e.stopPropagation();
+          onClick();
+        }}
+        className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 hover:text-white transition-all pointer-events-auto"
+        aria-label={`${direction === 'prev' ? 'Previous' : 'Next'} photo`}
+        data-testid={`lightbox-${direction}`}
+        type="button"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={direction === 'prev' ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"}/>
+        </svg>
+      </button>
+    </div>
+  );
   
   return (
     <div 
@@ -587,7 +587,9 @@ const PhotoLightbox = ({
               aria-label="Save photo"
               className="text-white/90 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-50"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-download-icon lucide-download"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -621,9 +623,7 @@ const PhotoLightbox = ({
                     poster={videoThumbnails[lightboxIndex]}
                     className="w-full h-full object-contain"
                     onClick={toggleVideoPlayback}
-                    onError={() => {
-                      console.error(`Failed to load lightbox video: ${lightboxPhoto.src}`);
-                    }}
+                    onError={() => console.error(`Failed to load lightbox video: ${lightboxPhoto.src}`)}
                   />
                   
                   <div 
@@ -632,14 +632,14 @@ const PhotoLightbox = ({
                   >
                     <div className={`bg-black/30 backdrop-blur-sm rounded-full p-4 transition-opacity ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                       {isVideoPlaying ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
                           <rect x="6" y="4" width="4" height="16"></rect>
                           <rect x="14" y="4" width="4" height="16"></rect>
-                      </svg>
+                        </svg>
                       ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
                           <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
+                        </svg>
                       )}
                     </div>
                   </div>
@@ -656,9 +656,7 @@ const PhotoLightbox = ({
                   blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFdgJngp6NkgAAAABJRU5ErkJggg=="
                   data-testid={`lightbox-image-${lightboxIndex}`}
                   fetchPriority="high"
-                  onError={() => {
-                    console.error(`Failed to load lightbox image: ${lightboxPhoto.src}`);
-                  }}
+                  onError={() => console.error(`Failed to load lightbox image: ${lightboxPhoto.src}`)}
                 />
               )}
               {lightboxPhoto.caption && (
@@ -675,43 +673,8 @@ const PhotoLightbox = ({
           
           {photos.length > 1 && (
             <>
-              <div 
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-[9999] pointer-events-none"
-                style={{ zIndex: Z_INDICES.MODAL_CONTROLS }}
-              >
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault(); 
-                    e.stopPropagation();
-                    navigateImage("prev");
-                  }}
-                  className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 hover:text-white transition-all pointer-events-auto"
-                  aria-label="Previous photo"
-                  data-testid="lightbox-prev"
-                  type="button"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
-                </button>
-              </div>
-              
-              <div
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-[9999] pointer-events-none"
-                style={{ zIndex: Z_INDICES.MODAL_CONTROLS }}
-              >
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigateImage("next");
-                  }}
-                  className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/70 hover:text-white transition-all pointer-events-auto"
-                  aria-label="Next photo"
-                  data-testid="lightbox-next"
-                  type="button"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              </div>
+              <NavigationButton direction="prev" onClick={() => navigateImage("prev")} />
+              <NavigationButton direction="next" onClick={() => navigateImage("next")} />
             </>
           )}
         </div>

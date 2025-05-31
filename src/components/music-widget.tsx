@@ -24,7 +24,20 @@ interface MusicWidgetProps {
   onAudioReady?: () => void
 }
 
-function useAudioPlayer(
+const AUDIO_CONFIG = {
+  progressUpdateInterval: 100,
+  maxSeekOffset: 3,
+  loadTimeout: 5000,
+  colorExtractionSize: 100,
+  colorSampleStep: 10
+} as const;
+
+const DEFAULT_COLORS = {
+  primary: 'rgba(74, 59, 51, 0.9)',
+  fallback: '#4A3B33'
+} as const;
+
+const useAudioPlayer = (
   track: Track | undefined, 
   tracks: Track[], 
   currentTrackIndex: number,
@@ -32,7 +45,7 @@ function useAudioPlayer(
   onPlaybackError?: () => void,
   autoplay?: boolean,
   onAudioReady?: () => void
-) {
+) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,30 +59,23 @@ function useAudioPlayer(
   const progressIntervalRef = useRef<number | null>(null);
   const eventHandlersRef = useRef<{[key: string]: EventListener}>({});
   
-  // Cleanup function for audio resources
   const cleanupAudio = useCallback(() => {
     if (audioRef.current) {
-      // Remove all event listeners
-      if (eventHandlersRef.current) {
-        Object.entries(eventHandlersRef.current).forEach(([eventName, handler]) => {
-          audioRef.current?.removeEventListener(eventName, handler);
-        });
-      }
+      Object.entries(eventHandlersRef.current).forEach(([eventName, handler]) => {
+        audioRef.current?.removeEventListener(eventName, handler);
+      });
       
-      // Stop playback and release resources
       audioRef.current.pause();
       audioRef.current.src = "";
       audioRef.current.load();
       audioRef.current = null;
     }
     
-    // Clear progress tracking interval
     if (progressIntervalRef.current) {
       window.clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
     
-    // Reset states
     setIsLoading(false);
     setIsPlaying(false);
     setProgress(0);
@@ -78,7 +84,6 @@ function useAudioPlayer(
     setAudioInitialized(false);
   }, []);
 
-  // Volume control functions
   const toggleMute = useCallback(() => {
     if (audioRef.current) {
       const newMutedState = !isMuted;
@@ -95,13 +100,11 @@ function useAudioPlayer(
       audioRef.current.volume = isMuted ? 0 : clampedVolume;
     }
     
-    // Auto-unmute if volume is increased while muted
     if (isMuted && clampedVolume > 0) {
       setIsMuted(false);
     }
   }, [isMuted]);
   
-  // Effect for automatic playback - only runs after audio is ready
   useEffect(() => {
     if (autoplay && track?.audioPreviewUrl && !isPlaying && isReady && audioRef.current) {
       const playPromise = audioRef.current.play();
@@ -114,12 +117,10 @@ function useAudioPlayer(
     }
   }, [autoplay, track?.audioPreviewUrl, isPlaying, isReady]);
 
-  // Cleanup effect when track changes or component unmounts
   useEffect(() => {
     return cleanupAudio;
   }, [track?.id, cleanupAudio]);
 
-  // Setup progress tracking when playing
   useEffect(() => {
     if (isPlaying && audioRef.current) {
       progressIntervalRef.current = window.setInterval(() => {
@@ -127,7 +128,7 @@ function useAudioPlayer(
           const currentProgress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
           setProgress(currentProgress);
         }
-      }, 100);
+      }, AUDIO_CONFIG.progressUpdateInterval);
     } else if (progressIntervalRef.current) {
       window.clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
@@ -141,7 +142,6 @@ function useAudioPlayer(
     };
   }, [isPlaying]);
   
-  // Control audio playback based on isPlaying state
   useEffect(() => {
     if (!audioRef.current || !isReady) return;
 
@@ -163,14 +163,95 @@ function useAudioPlayer(
     }
   }, [isPlaying, isReady]);
   
-  // Initialize and load audio only when toggling play
+  const getErrorMessage = useCallback((e: Event) => {
+    if (e.target && (e.target instanceof HTMLAudioElement) && (e.target as HTMLAudioElement).error) {
+      const mediaError = (e.target as HTMLAudioElement).error;
+      const errorMessages: { [key: number]: string } = {
+        [MediaError.MEDIA_ERR_ABORTED]: "Playback aborted.",
+        [MediaError.MEDIA_ERR_NETWORK]: "Network error.",
+        [MediaError.MEDIA_ERR_DECODE]: "Decoding error.",
+        [MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED]: "Source not supported."
+      };
+      
+      const baseMessage = errorMessages[mediaError?.code || 0] || "Unknown error.";
+      return `Error Code ${mediaError?.code}: ${baseMessage}${mediaError?.message ? ` (${mediaError.message})` : ''}`;
+    }
+    return "Audio playback error";
+  }, []);
+
+  const createAudioEventHandlers = useCallback(() => {
+    const handleEnded: EventListener = () => {
+      if (tracks.length > 1 && currentTrackIndex < tracks.length - 1) {
+        setCurrentTrackIndex(prev => prev + 1);
+      } else {
+        setIsPlaying(false);
+        setProgress(0); 
+      }
+    };
+    
+    const handleCanPlay: EventListener = () => {
+      setIsLoading(false);
+      setIsReady(true); 
+      if (onAudioReady) {
+        onAudioReady();
+      }
+      
+      if (audioRef.current) {
+        audioRef.current.play().catch(err => {
+          console.error("Error playing audio:", err);
+          setError("Playback failed");
+          setIsPlaying(false);
+        });
+      }
+    };
+    
+    const handleError: EventListener = (e: Event) => {
+      console.error("Audio Error:", e); 
+      const errorMessage = getErrorMessage(e);
+
+      setIsLoading(false);
+      setIsPlaying(false);
+      setIsReady(false);
+      setError(errorMessage);
+      if (onPlaybackError) onPlaybackError();
+    };
+    
+    const handleStalled: EventListener = () => { 
+      setIsLoading(true); 
+      console.warn("Audio stalled."); 
+    };
+
+    const handleWaiting: EventListener = () => { 
+      setIsLoading(true); 
+      console.warn("Audio waiting (buffering)."); 
+    };
+
+    const handlePlaying: EventListener = () => {
+      setIsLoading(false);
+      setIsPlaying(true);
+    };
+
+    const handlePause: EventListener = () => {
+      setIsPlaying(false);
+    };
+    
+    return {
+      ended: handleEnded,
+      canplaythrough: handleCanPlay,
+      error: handleError,
+      stalled: handleStalled,
+      waiting: handleWaiting,
+      playing: handlePlaying,
+      pause: handlePause
+    };
+  }, [tracks.length, currentTrackIndex, setCurrentTrackIndex, onAudioReady, onPlaybackError, getErrorMessage]);
+
   const togglePlay = useCallback(() => {
     if (!track?.audioPreviewUrl) {
       setError("No audio available");
       return;
     }
     
-    // If not initialized yet, initialize audio
     if (!audioInitialized) {
       setIsLoading(true);
       setError(null);
@@ -183,92 +264,15 @@ function useAudioPlayer(
         const newAudio = new Audio();
         audioRef.current = newAudio;
         
-        // Set initial volume
         newAudio.volume = isMuted ? 0 : volume;
         
-        // Create event handlers
-        const handleEnded: EventListener = () => {
-          if (tracks.length > 1 && currentTrackIndex < tracks.length - 1) {
-            setCurrentTrackIndex(prev => prev + 1);
-          } else {
-            setIsPlaying(false);
-            setProgress(0); 
-          }
-        };
+        const handlers = createAudioEventHandlers();
+        eventHandlersRef.current = handlers;
         
-        const handleCanPlay: EventListener = () => {
-          setIsLoading(false);
-          setIsReady(true); 
-          if (onAudioReady) {
-            onAudioReady();
-          }
-          // Start playing after initialization
-          newAudio.play().catch(err => {
-            console.error("Error playing audio:", err);
-            setError("Playback failed");
-            setIsPlaying(false);
-          });
-        };
-        
-        const handleError: EventListener = (e: Event) => {
-          console.error("Audio Error:", e); 
-          let errorMessage = "Audio playback error";
-          if (e.target && (e.target instanceof HTMLAudioElement) && (e.target as HTMLAudioElement).error) {
-            const mediaError = (e.target as HTMLAudioElement).error;
-            errorMessage = `Error Code ${mediaError?.code}: `;
-            switch (mediaError?.code) {
-              case MediaError.MEDIA_ERR_ABORTED: errorMessage += "Playback aborted."; break;
-              case MediaError.MEDIA_ERR_NETWORK: errorMessage += "Network error."; break;
-              case MediaError.MEDIA_ERR_DECODE: errorMessage += "Decoding error."; break;
-              case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errorMessage += "Source not supported."; break;
-              default: errorMessage += "Unknown error.";
-            }
-            if (mediaError?.message && mediaError.message.trim() !== "") errorMessage += ` (${mediaError.message})`;
-          }
-
-          setIsLoading(false);
-          setIsPlaying(false);
-          setIsReady(false);
-          setError(errorMessage);
-          if (onPlaybackError) onPlaybackError();
-        };
-        
-        const handleStalled: EventListener = () => { 
-          setIsLoading(true); 
-          console.warn("Audio stalled."); 
-        };
-
-        const handleWaiting: EventListener = () => { 
-          setIsLoading(true); 
-          console.warn("Audio waiting (buffering)."); 
-        };
-
-        const handlePlaying: EventListener = () => {
-          setIsLoading(false);
-          setIsPlaying(true);
-        };
-
-        const handlePause: EventListener = () => {
-          setIsPlaying(false);
-        };
-        
-        // Store handlers reference for cleanup
-        eventHandlersRef.current = {
-          ended: handleEnded,
-          canplaythrough: handleCanPlay,
-          error: handleError,
-          stalled: handleStalled,
-          waiting: handleWaiting,
-          playing: handlePlaying,
-          pause: handlePause
-        };
-        
-        // Add event listeners
-        Object.entries(eventHandlersRef.current).forEach(([eventName, handler]) => {
+        Object.entries(handlers).forEach(([eventName, handler]) => {
           newAudio.addEventListener(eventName, handler);
         });
         
-        // Set src and load
         newAudio.src = audioUrl;
         newAudio.preload = "auto";
         newAudio.load();
@@ -281,13 +285,11 @@ function useAudioPlayer(
         setIsLoading(false);
       }
     } else {
-      // If already initialized, just toggle play state
       setError(null);
       setIsPlaying(prevIsPlaying => !prevIsPlaying);
     }
-  }, [track, currentTrackIndex, tracks.length, setCurrentTrackIndex, onAudioReady, onPlaybackError, audioInitialized, isMuted, volume]);
+  }, [track, createAudioEventHandlers, audioInitialized, isMuted, volume]);
 
-  // Update audio volume when mute/volume changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
@@ -305,7 +307,7 @@ function useAudioPlayer(
   }, [currentTrackIndex, tracks.length, setCurrentTrackIndex, cleanupAudio]);
   
   const handlePrevTrack = useCallback(() => {
-    if (audioRef.current && audioRef.current.currentTime > 3) {
+    if (audioRef.current && audioRef.current.currentTime > AUDIO_CONFIG.maxSeekOffset) {
       audioRef.current.currentTime = 0;
       setProgress(0);
       if (!isPlaying) setIsPlaying(true);
@@ -366,9 +368,8 @@ function useAudioPlayer(
     formatTime,
     audioRef
   };
-}
+};
 
-// Updated SpeakerIcon component with mute/unmute states
 const SpeakerIcon = memo(({ 
   className, 
   isMuted, 
@@ -389,33 +390,37 @@ const SpeakerIcon = memo(({
 
   const volumeLevel = getVolumeLevel();
 
-  if (isMuted) {
-    return (
-      <button
-        onClick={onClick}
-        className={`${className} transition-colors`}
-        aria-label="Unmute"
-        title="Unmute"
-      >
-        <svg 
-          className="chrome-volume__icon w-full h-full" 
-          role="presentation" 
-          version="1.1" 
-          viewBox="0 0 64 64"
-          fill="currentColor"
-        >
-          <path transform="translate(2,11.149)" d="m23.477 39.911c1.4129 0 2.431-1.0389 2.431-2.431v-33.141c0-1.3921-1.0181-2.5349-2.4726-2.5349-1.0181 0-1.7038 0.43634-2.805 1.4752l-9.2046 8.6644c-0.14545 0.12464-0.31166 0.18698-0.51945 0.18698h-6.2126c-2.9297 0-4.5088 1.5999-4.5088 4.7374v8.0411c0 3.1167 1.5791 4.7166 4.5088 4.7166h6.2126c0.20779 0 0.374 0.06234 0.51945 0.18698l9.2046 8.7475c0.99732 0.93501 1.8285 1.3506 2.8466 1.3506z"></path>
-        </svg>
-      </button>
-    );
-  }
+  const renderVolumeWaves = () => {
+    const waves = [
+      { level: 'low', opacity: volumeLevel === 'low' ? 0.6 : 1, path: "m34.864 29.959c0.70647 0.49868 1.7246 0.35323 2.3271-0.47787 1.6205-2.1817 2.5971-5.3815 2.5971-8.6436 0-3.2621-0.9766-6.4411-2.5971-8.6436-0.60255-0.83111-1.5999-0.97655-2.3271-0.49868-0.89345 0.62336-1.0181 1.683-0.35319 2.5765 1.2051 1.6207 1.9323 4.0932 1.9323 6.5658 0 2.4726-0.76881 4.9451-1.9531 6.5866-0.62332 0.89345-0.51945 1.9116 0.374 2.5349z" },
+      { level: 'medium', opacity: volumeLevel === 'medium' ? 0.7 : 1, path: "m43.154 35.569c0.81021 0.54023 1.8077 0.33245 2.3894-0.49867 2.7426-3.8231 4.3426-8.9137 4.3426-14.233 0-5.3399-1.5583-10.451-4.3426-14.254-0.60255-0.81034-1.5791-1.0181-2.3894-0.47787-0.78979 0.54021-0.91447 1.5583-0.29106 2.4518 2.2647 3.3245 3.6779 7.6878 3.6779 12.28s-1.3923 8.9969-3.6779 12.28c-0.60255 0.89345-0.49872 1.9116 0.29106 2.4518z" },
+      { level: 'high', opacity: 1, path: "m51.527 41.241c0.76894 0.51945 1.7872 0.31166 2.3898-0.54021 3.8438-5.423 6.0255-12.446 6.0255-19.864s-2.2443-14.42-6.0255-19.864c-0.60255-0.87268-1.6209-1.0805-2.3898-0.54021-0.78936 0.56098-0.91404 1.5791-0.31149 2.4518 3.3451 4.9244 5.423 11.241 5.423 17.952 0 6.7113-1.9945 13.132-5.423 17.952-0.60255 0.87268-0.47787 1.8908 0.31149 2.4518z" }
+    ];
+
+    return waves.map((wave, index) => {
+      const shouldShow = (
+        (wave.level === 'low' && ['low', 'medium', 'high'].includes(volumeLevel)) ||
+        (wave.level === 'medium' && ['medium', 'high'].includes(volumeLevel)) ||
+        (wave.level === 'high' && volumeLevel === 'high')
+      );
+
+      return shouldShow ? (
+        <path 
+          key={index}
+          transform="translate(2,11.149)" 
+          d={wave.path}
+          opacity={wave.opacity}
+        />
+      ) : null;
+    });
+  };
 
   return (
     <button
       onClick={onClick}
       className={`${className} transition-colors`}
-      aria-label="Mute"
-      title="Mute"
+      aria-label={isMuted ? "Unmute" : "Mute"}
+      title={isMuted ? "Unmute" : "Mute"}
     >
       <svg 
         role="presentation" 
@@ -426,33 +431,7 @@ const SpeakerIcon = memo(({
         className="w-full h-full"
       >
         <path transform="translate(2,11.149)" d="m23.477 39.911c1.4129 0 2.431-1.0389 2.431-2.431v-33.141c0-1.3921-1.0181-2.5349-2.4726-2.5349-1.0181 0-1.7038 0.43634-2.805 1.4752l-9.2046 8.6644c-0.14545 0.12464-0.31166 0.18698-0.51945 0.18698h-6.2126c-2.9297 0-4.5088 1.5999-4.5088 4.7374v8.0411c0 3.1167 1.5791 4.7166 4.5088 4.7166h6.2126c0.20779 0 0.374 0.06234 0.51945 0.18698l9.2046 8.7475c0.99732 0.93501 1.8285 1.3506 2.8466 1.3506z"></path>
-        
-        {/* Volume waves */}
-        {(volumeLevel === 'low' || volumeLevel === 'medium' || volumeLevel === 'high') && (
-          <path 
-            className="chrome-volume__wave-1" 
-            transform="translate(2,11.149)" 
-            d="m34.864 29.959c0.70647 0.49868 1.7246 0.35323 2.3271-0.47787 1.6205-2.1817 2.5971-5.3815 2.5971-8.6436 0-3.2621-0.9766-6.4411-2.5971-8.6436-0.60255-0.83111-1.5999-0.97655-2.3271-0.49868-0.89345 0.62336-1.0181 1.683-0.35319 2.5765 1.2051 1.6207 1.9323 4.0932 1.9323 6.5658 0 2.4726-0.76881 4.9451-1.9531 6.5866-0.62332 0.89345-0.51945 1.9116 0.374 2.5349z"
-            opacity={volumeLevel === 'low' ? 0.6 : 1}
-          />
-        )}
-        
-        {(volumeLevel === 'medium' || volumeLevel === 'high') && (
-          <path 
-            className="chrome-volume__wave-2" 
-            transform="translate(2,11.149)" 
-            d="m43.154 35.569c0.81021 0.54023 1.8077 0.33245 2.3894-0.49867 2.7426-3.8231 4.3426-8.9137 4.3426-14.233 0-5.3399-1.5583-10.451-4.3426-14.254-0.60255-0.81034-1.5791-1.0181-2.3894-0.47787-0.78979 0.54021-0.91447 1.5583-0.29106 2.4518 2.2647 3.3245 3.6779 7.6878 3.6779 12.28s-1.3923 8.9969-3.6779 12.28c-0.60255 0.89345-0.49872 1.9116 0.29106 2.4518z"
-            opacity={volumeLevel === 'medium' ? 0.7 : 1}
-          />
-        )}
-        
-        {volumeLevel === 'high' && (
-          <path 
-            className="chrome-volume__wave-3" 
-            transform="translate(2,11.149)" 
-            d="m51.527 41.241c0.76894 0.51945 1.7872 0.31166 2.3898-0.54021 3.8438-5.423 6.0255-12.446 6.0255-19.864s-2.2443-14.42-6.0255-19.864c-0.60255-0.87268-1.6209-1.0805-2.3898-0.54021-0.78936 0.56098-0.91404 1.5791-0.31149 2.4518 3.3451 4.9244 5.423 11.241 5.423 17.952 0 6.7113-1.9945 13.132-5.423 17.952-0.60255 0.87268-0.47787 1.8908 0.31149 2.4518z"
-          />
-        )}
+        {!isMuted && renderVolumeWaves()}
       </svg>
     </button>
   );
@@ -475,6 +454,50 @@ const TrackInfo = memo(({
 
 TrackInfo.displayName = "TrackInfo";
 
+const PlayButton = memo(({ isPlaying, isLoading, isReady, onClick }: {
+  isPlaying: boolean;
+  isLoading: boolean;
+  isReady: boolean;
+  onClick: () => void;
+}) => {
+  const renderIcon = () => {
+    if (isLoading && !isReady) {
+      return (
+        <div className="w-5 h-5 border-2 border-t-transparent border-[#4A3B33] rounded-full animate-spin" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      );
+    }
+    
+    if (isPlaying) {
+      return (
+        <svg viewBox="0 0 32 28" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 md:w-7 md:h-7" aria-hidden="true">
+          <path d="M13.293 22.772c.955 0 1.436-.481 1.436-1.436V6.677c0-.98-.481-1.427-1.436-1.427h-2.457c-.954 0-1.436.473-1.436 1.427v14.66c-.008.954.473 1.435 1.436 1.435h2.457zm7.87 0c.954 0 1.427-.481 1.427-1.436V6.677c0-.98-.473-1.427-1.428-1.427h-2.465c-.955 0-1.428.473-1.428 1.427v14.66c0 .954.473 1.435 1.428 1.435h2.465z" fillRule="nonzero"></path>
+        </svg>
+      );
+    }
+    
+    return (
+      <svg viewBox="0 0 32 28" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 md:w-7 md:h-7" aria-hidden="true">
+        <path d="M10.345 23.287c.415 0 .763-.15 1.22-.407l12.742-7.404c.838-.481 1.178-.855 1.178-1.46 0-.599-.34-.972-1.178-1.462L11.565 5.158c-.457-.265-.805-.407-1.22-.407-.789 0-1.345.606-1.345 1.57V21.71c0 .971.556 1.577 1.345 1.577z" fillRule="nonzero"></path>
+      </svg>
+    );
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={isLoading && !isReady}
+      className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white text-[#4A3B33] hover:bg-gray-200 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-white/50"
+      aria-label={isPlaying ? "Pause" : "Play"}
+    >
+      {renderIcon()}
+    </button>
+  );
+});
+
+PlayButton.displayName = "PlayButton";
+
 const Controls = memo(
   ({
     onPrev,
@@ -494,14 +517,27 @@ const Controls = memo(
     isReady: boolean;
     isPrevDisabled: boolean;
     isNextDisabled: boolean;
+  }) => {
+  
+  const IconButton = ({ onClick, disabled, ariaLabel, children }: {
+    onClick: () => void;
+    disabled: boolean;
+    ariaLabel: string;
+    children: React.ReactNode;
   }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center justify-center text-gray-300 hover:text-white disabled:text-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-1"
+      aria-label={ariaLabel}
+    >
+      {children}
+    </button>
+  );
+
+  return (
     <div className="flex items-center justify-center gap-5">
-      <button
-        onClick={onPrev}
-        disabled={isPrevDisabled}
-        className="flex items-center justify-center text-gray-300 hover:text-white disabled:text-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-1"
-        aria-label="Previous track"
-      >
+      <IconButton onClick={onPrev} disabled={isPrevDisabled} ariaLabel="Previous track">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -512,35 +548,16 @@ const Controls = memo(
         >
           <path d="M208,47.88V208.12a16,16,0,0,1-24.43,13.43L64,146.77V216a8,8,0,0,1-16,0V40a8,8,0,0,1,16,0v69.23L183.57,34.45A15.95,15.95,0,0,1,208,47.88Z"></path>
         </svg>
-      </button>
+      </IconButton>
 
-      <button
+      <PlayButton 
+        isPlaying={isPlaying}
+        isLoading={isLoading}
+        isReady={isReady}
         onClick={onPlay}
-        disabled={isLoading && !isReady}
-        className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white text-[#4A3B33] hover:bg-gray-200 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-white/50"
-        aria-label={isPlaying ? "Pause" : "Play"}
-      >
-        {(isLoading && !isReady) ? (
-          <div className="w-5 h-5 border-2 border-t-transparent border-[#4A3B33] rounded-full animate-spin" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-        ) : isPlaying ? (
-          <svg viewBox="0 0 32 28" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 md:w-7 md:h-7" aria-hidden="true">
-            <path d="M13.293 22.772c.955 0 1.436-.481 1.436-1.436V6.677c0-.98-.481-1.427-1.436-1.427h-2.457c-.954 0-1.436.473-1.436 1.427v14.66c-.008.954.473 1.435 1.436 1.435h2.457zm7.87 0c.954 0 1.427-.481 1.427-1.436V6.677c0-.98-.473-1.427-1.428-1.427h-2.465c-.955 0-1.428.473-1.428 1.427v14.66c0 .954.473 1.435 1.428 1.435h2.465z" fillRule="nonzero"></path>
-          </svg>
-        ) : (
-        <svg viewBox="0 0 32 28" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 md:w-7 md:h-7" aria-hidden="true">
-          <path d="M10.345 23.287c.415 0 .763-.15 1.22-.407l12.742-7.404c.838-.481 1.178-.855 1.178-1.46 0-.599-.34-.972-1.178-1.462L11.565 5.158c-.457-.265-.805-.407-1.22-.407-.789 0-1.345.606-1.345 1.57V21.71c0 .971.556 1.577 1.345 1.577z" fillRule="nonzero"></path>
-        </svg>
-        )}
-      </button>
+      />
 
-      <button
-        onClick={onNext}
-        disabled={isNextDisabled}
-        className="flex items-center justify-center text-gray-300 hover:text-white disabled:text-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-1"
-        aria-label="Next track"
-      >
+      <IconButton onClick={onNext} disabled={isNextDisabled} ariaLabel="Next track">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -551,37 +568,34 @@ const Controls = memo(
         >
           <path d="M208,40V216a8,8,0,0,1-16,0V146.77L72.43,221.55A15.95,15.95,0,0,1,48,208.12V47.88A15.95,15.95,0,0,1,72.43,34.45L192,109.23V40a8,8,0,0,1,16,0Z" />
         </svg>
-      </button>
+      </IconButton>
     </div>
-  )
-);
+  );
+});
 
 Controls.displayName = "Controls";
 
-// Image color extraction with error handling and performance optimization
-function useImageColor(coverArt: string | undefined) {
-  const [bgColor, setBgColor] = useState('rgba(74, 59, 51, 0.9)');
+const useImageColor = (coverArt: string | undefined) => {
+  const [bgColor, setBgColor] = useState<string>(DEFAULT_COLORS.primary);
   const extractionAttemptedRef = useRef(false);
   
   useEffect(() => {
     if (!coverArt || typeof window === 'undefined') {
-      setBgColor('rgba(74, 59, 51, 0.9)');
+      setBgColor(DEFAULT_COLORS.primary);
       return;
     }
 
-    // Reset extraction flag when coverArt changes
     extractionAttemptedRef.current = false;
     
     const img = new window.Image();
     img.crossOrigin = "Anonymous";
     
-    // Set a timeout to prevent hanging on slow/failed image loads
     const timeoutId = setTimeout(() => {
       if (!extractionAttemptedRef.current) {
         console.warn("Color extraction timed out for:", coverArt);
-        setBgColor('rgba(74, 59, 51, 0.9)');
+        setBgColor(DEFAULT_COLORS.primary);
       }
-    }, 5000);
+    }, AUDIO_CONFIG.loadTimeout);
 
     img.onload = () => {
       clearTimeout(timeoutId);
@@ -592,13 +606,11 @@ function useImageColor(coverArt: string | undefined) {
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           console.error("Failed to get canvas context.");
-          setBgColor('rgba(74, 59, 51, 0.9)');
+          setBgColor(DEFAULT_COLORS.primary);
           return;
         }
 
-        // Downscale large images for performance
-        const maxDimension = 100; 
-        const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+        const scale = Math.min(1, AUDIO_CONFIG.colorExtractionSize / Math.max(img.width, img.height));
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
         
@@ -610,8 +622,7 @@ function useImageColor(coverArt: string | undefined) {
           let r = 0, g = 0, b = 0;
           let count = 0;
           
-          // Sample fewer pixels for better performance
-          const step = Math.max(1, Math.floor(Math.min(canvas.width, canvas.height) / 10));
+          const step = Math.max(1, Math.floor(Math.min(canvas.width, canvas.height) / AUDIO_CONFIG.colorSampleStep));
 
           for (let y = 0; y < canvas.height; y += step) {
             for (let x = 0; x < canvas.width; x += step) {
@@ -631,15 +642,15 @@ function useImageColor(coverArt: string | undefined) {
             b = Math.floor(b / count);
             setBgColor(`rgba(${r}, ${g}, ${b}, 0.9)`);
           } else {
-            setBgColor('rgba(74, 59, 51, 0.9)');
+            setBgColor(DEFAULT_COLORS.primary);
           }
         } catch (e) {
           console.error("Error processing image for dominant color (CORS issue?):", e);
-          setBgColor('rgba(74, 59, 51, 0.9)');
+          setBgColor(DEFAULT_COLORS.primary);
         }
       } catch (err) {
         console.error("Error during color extraction:", err);
-        setBgColor('rgba(74, 59, 51, 0.9)');
+        setBgColor(DEFAULT_COLORS.primary);
       }
     };
 
@@ -647,7 +658,7 @@ function useImageColor(coverArt: string | undefined) {
       clearTimeout(timeoutId);
       extractionAttemptedRef.current = true;
       console.error("Error loading image for color extraction:", coverArt);
-      setBgColor('rgba(74, 59, 51, 0.9)');
+      setBgColor(DEFAULT_COLORS.primary);
     };
     
     img.src = coverArt;
@@ -660,7 +671,7 @@ function useImageColor(coverArt: string | undefined) {
   }, [coverArt]);
   
   return bgColor;
-}
+};
 
 export default function MusicWidget({
   track: singleTrack,
@@ -678,13 +689,12 @@ export default function MusicWidget({
   const track = tracks[currentTrackIndex];
   const bgColor = useImageColor(track?.coverArt);
 
-  // Adjust thumb offset based on screen size
   useEffect(() => {
     const handleResize = () => {
       setThumbOffset(window.innerWidth < 640 ? 4 : 6);
     };
     
-    handleResize(); // Set initial value
+    handleResize();
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -809,7 +819,7 @@ export default function MusicWidget({
             isPlaying={isPlaying}
             isLoading={isLoading}
             isReady={isReady}
-            isPrevDisabled={currentTrackIndex === 0 && (!audioRef.current || audioRef.current.currentTime <= 3)}
+            isPrevDisabled={currentTrackIndex === 0 && (!audioRef.current || audioRef.current.currentTime <= AUDIO_CONFIG.maxSeekOffset)}
             isNextDisabled={currentTrackIndex === tracks.length - 1}
           />
         </div>
@@ -818,7 +828,6 @@ export default function MusicWidget({
   );
 }
 
-// Add props interface for MusicPlaylist
 interface MusicPlaylistProps {
   onAllAudiosProcessed?: () => void;
 }
@@ -854,7 +863,6 @@ export function MusicPlaylist({ onAllAudiosProcessed }: MusicPlaylistProps) {
     }
   ];
   
-  // Immediately signal processing is complete without preloading
   useEffect(() => {
     if (onAllAudiosProcessed) {
       onAllAudiosProcessed();

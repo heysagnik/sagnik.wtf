@@ -16,7 +16,7 @@ const ANIMATION_CONFIG = {
       y: { type: "spring", stiffness: 200, damping: 20 },
       opacity: { duration: 0.2 },
       scale: { 
-        times: [0, 0.5, 1],
+        times: [0, 0.5, 1] as number[],
         duration: 2,
         repeat: Infinity,
         repeatDelay: 1
@@ -33,7 +33,7 @@ const ANIMATION_CONFIG = {
     transition: { duration: 0.2 }
   },
   tap: { scale: 0.97 }
-} as const
+} as const;
 
 const GLOW_ANIMATION = {
   animate: {
@@ -41,31 +41,47 @@ const GLOW_ANIMATION = {
       "0 0 8px rgba(59, 130, 246, 0.3)",
       "0 0 16px rgba(59, 130, 246, 0.5)",
       "0 0 8px rgba(59, 130, 246, 0.3)"
-    ] as string[]
+    ]
   },
   transition: {
     duration: 2,
     repeat: Infinity,
     repeatType: "reverse" as const
   }
-}
+};
 
 const STYLES = {
   button: `absolute left-1/2 top-[82px] z-[2002] transform -translate-x-1/2 rounded-full py-2 px-5
            bg-blue-500/80 backdrop-blur-md flex items-center justify-center`,
   text: "text-white text-xs sm:text-sm font-medium tracking-wide",
   glow: "absolute inset-0 rounded-full -z-10"
-} as const
+} as const;
 
-const NewMessagesNotification = memo<NewMessagesNotificationProps>(({ onClick }) => {
-  const [isVisible, setIsVisible] = useState(true)
+const BUTTON_STYLE = {
+  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
+} as const;
+
+const formatMessageText = (count: number): string => {
+  return count === 1 ? "1 new message" : `${count} new messages`;
+};
+
+const useNotificationVisibility = (onClick: () => void) => {
+  const [isVisible, setIsVisible] = useState(true);
   
   const handleClick = useCallback(() => {
-    onClick()
-    setIsVisible(false)
-  }, [onClick])
+    onClick();
+    setIsVisible(false);
+  }, [onClick]);
   
-  if (!isVisible) return null
+  return { isVisible, handleClick };
+};
+
+const NewMessagesNotification = memo<NewMessagesNotificationProps>(({ count, onClick }) => {
+  const { isVisible, handleClick } = useNotificationVisibility(onClick);
+  const messageText = formatMessageText(count);
+  
+  if (!isVisible) return null;
   
   return (
     <motion.button
@@ -74,14 +90,11 @@ const NewMessagesNotification = memo<NewMessagesNotificationProps>(({ onClick })
       {...ANIMATION_CONFIG}
       whileHover={ANIMATION_CONFIG.hover}
       whileTap={ANIMATION_CONFIG.tap}
-      style={{
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
-        border: "1px solid rgba(255, 255, 255, 0.2)"
-      }}
-      aria-label="2 new messages, tap to view"
+      style={BUTTON_STYLE}
+      aria-label={`${messageText}, tap to view`}
     >
       <span className={STYLES.text}>
-        2 new messages
+        {messageText}
       </span>
       
       <motion.div
@@ -90,8 +103,8 @@ const NewMessagesNotification = memo<NewMessagesNotificationProps>(({ onClick })
         transition={GLOW_ANIMATION.transition}
       />
     </motion.button>
-  )
-})
+  );
+});
 
-NewMessagesNotification.displayName = 'NewMessagesNotification'
-export default NewMessagesNotification
+NewMessagesNotification.displayName = 'NewMessagesNotification';
+export default NewMessagesNotification;
