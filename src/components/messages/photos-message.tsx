@@ -72,9 +72,10 @@ const useImageLoading = (photos: Photo[]) => {
             }
             
             if (isVideoFile(photo.src)) {
+              // For videos, mark as loaded when metadata is available
               return new Promise<void>((resolve, reject) => {
                 const video = document.createElement('video');
-                video.onloadeddata = () => {
+                video.onloadedmetadata = () => {
                   setIsLoaded(prev => ({...prev, [actualIndex]: true}));
                   resolve();
                 };
@@ -109,50 +110,6 @@ const useImageLoading = (photos: Photo[]) => {
   }, [photos, handleImageError]);
   
   return { imageErrors, isLoaded, setIsLoaded, handleImageError };
-};
-
-const useVideoThumbnails = () => {
-  const [videoThumbnails, setVideoThumbnails] = useState<Record<number, string>>({});
-  
-  const generateVideoThumbnail = useCallback((video: HTMLVideoElement, index: number) => {
-    try {
-      if (!video.videoWidth || !video.videoHeight) {
-        setTimeout(() => generateVideoThumbnail(video, index), 100);
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        if (video.duration) {
-          video.currentTime = Math.min(0.5, video.duration * 0.1);
-        }
-        
-        const captureFrame = () => {
-          try {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const thumbnailUrl = canvas.toDataURL('image/jpeg');
-            setVideoThumbnails(prev => ({...prev, [index]: thumbnailUrl}));
-          } catch (err) {
-            console.error(`Error capturing frame for video ${index}:`, err);
-          }
-        };
-        
-        if (video.duration) {
-          video.addEventListener('seeked', captureFrame, { once: true });
-        } else {
-          captureFrame();
-        }
-      }
-    } catch (error) {
-      console.error(`Error generating thumbnail for video ${index}:`, error);
-    }
-  }, []);
-  
-  return { videoThumbnails, generateVideoThumbnail };
 };
 
 const useLightbox = (photos: Photo[]) => {
@@ -305,22 +262,18 @@ const PhotoGrid = ({
   photos, 
   imageErrors, 
   isLoaded, 
-  videoThumbnails, 
   openLightbox, 
   photoGridRef,
   content,
-  generateVideoThumbnail,
   handleImageError,
   setIsLoaded
 }: {
   photos: Photo[],
   imageErrors: Record<number, boolean>,
   isLoaded: Record<number, boolean>,
-  videoThumbnails: Record<number, string>,
   openLightbox: (photo: Photo, index: number) => void,
   photoGridRef: React.RefObject<HTMLDivElement | null>,
   content?: string,
-  generateVideoThumbnail: (video: HTMLVideoElement, index: number) => void,
   handleImageError: (index: number) => void,
   setIsLoaded: React.Dispatch<React.SetStateAction<Record<number, boolean>>>
 }) => {
@@ -408,6 +361,7 @@ const PhotoGrid = ({
               <div className="w-full h-full">
                 {isVideoFile(photo.src) ? (
                   <div className="relative w-full h-full">
+                    {/* Video element for thumbnail */}
                     <video
                       src={photo.src}
                       preload="metadata"
@@ -415,26 +369,18 @@ const PhotoGrid = ({
                       onLoadedMetadata={() => {
                         setIsLoaded(prev => ({...prev, [index]: true}));
                       }}
-                      onLoadedData={(e) => {
-                        generateVideoThumbnail(e.currentTarget, index);
-                      }}
                       onError={() => handleImageError(index)}
+                      muted
+                      playsInline
                     />
-                    {videoThumbnails[index] && (
-                      <div className="absolute inset-0">
-                        <Image
-                          src={videoThumbnails[index]}
-                          alt={photo.alt || `Video ${index + 1}`}
-                          fill
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    
+                    {/* Play button overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="11" fill="rgba(255,255,255,0.95)" filter="drop-shadow(0 1px 3px rgba(0,0,0,0.2))" />
-                        <path d="M16 12L10 16.5V7.5L16 12Z" fill="#000000" fillOpacity="0.8" />
-                      </svg>
+                      <div className="bg-black/50 backdrop-blur-sm rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -493,7 +439,6 @@ const PhotoLightbox = ({
   offsetX,
   isDragging,
   isVideoPlaying,
-  videoThumbnails,
   lightboxRef,
   videoRef,
   closeLightbox,
@@ -512,7 +457,6 @@ const PhotoLightbox = ({
   offsetX: number,
   isDragging: boolean,
   isVideoPlaying: boolean,
-  videoThumbnails: Record<number, string>,
   lightboxRef: React.RefObject<HTMLDivElement | null>,
   videoRef: React.RefObject<HTMLVideoElement | null>,
   closeLightbox: () => void,
@@ -620,29 +564,24 @@ const PhotoLightbox = ({
                   <video
                     ref={videoRef}
                     src={lightboxPhoto.src}
-                    poster={videoThumbnails[lightboxIndex]}
                     className="w-full h-full object-contain"
+                    controls={isVideoPlaying}
                     onClick={toggleVideoPlayback}
                     onError={() => console.error(`Failed to load lightbox video: ${lightboxPhoto.src}`)}
                   />
                   
-                  <div 
-                    className="absolute inset-0 flex items-center justify-center cursor-pointer"
-                    onClick={toggleVideoPlayback}
-                  >
-                    <div className={`bg-black/30 backdrop-blur-sm rounded-full p-4 transition-opacity ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-                      {isVideoPlaying ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
-                          <rect x="6" y="4" width="4" height="16"></rect>
-                          <rect x="14" y="4" width="4" height="16"></rect>
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
+                  {!isVideoPlaying && (
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                      onClick={toggleVideoPlayback}
+                    >
+                      <div className="bg-black/50 backdrop-blur-sm rounded-full p-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                           <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <Image
@@ -729,7 +668,6 @@ export const PhotosMessage = ({
   bubbleMaxWidth
 }: PhotosMessageProps) => {
   const { imageErrors, isLoaded, handleImageError, setIsLoaded } = useImageLoading(photos);
-  const { videoThumbnails, generateVideoThumbnail } = useVideoThumbnails();
   const { 
     lightboxPhoto, lightboxIndex, offsetX, isDragging, isVideoPlaying,
     lightboxRef, videoRef, photoGridRef, openLightbox: openLightboxBase,
@@ -767,11 +705,9 @@ export const PhotosMessage = ({
           photos={photos}
           imageErrors={imageErrors}
           isLoaded={isLoaded}
-          videoThumbnails={videoThumbnails}
           openLightbox={openLightbox}
           photoGridRef={photoGridRef}
           content={content}
-          generateVideoThumbnail={generateVideoThumbnail}
           handleImageError={handleImageError}
           setIsLoaded={setIsLoaded}
         />
@@ -786,7 +722,6 @@ export const PhotosMessage = ({
             offsetX={offsetX}
             isDragging={isDragging}
             isVideoPlaying={isVideoPlaying}
-            videoThumbnails={videoThumbnails}
             lightboxRef={lightboxRef}
             videoRef={videoRef}
             closeLightbox={closeLightbox}

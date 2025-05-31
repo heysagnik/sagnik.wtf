@@ -84,20 +84,20 @@ const HARDCODED_MESSAGES: MessageType[] = [
     content: "i drop some thoughts on my blog sometimes. check it:",
     type: "blog",
     blogs: [
-      {
+        {
         title: "Open Source",
         description: "Thoughts & feelings on Open Source",
         link: "/blogs/open-source",
       },
       {
-        title: "Avoiding homework with code",
-        description: "The eventful tale of me getting fed up with my homework",
-        link: "/blogs/avoiding-homework-with-code",
+        title: "Art of Procrastination",
+        description: "How I procrastinate and still get things done",
+        link: "/blogs/art-of-procrastination",
       },
       {
-        title: "The 0kb Next.js blog",
-        description: "How I shipped a Next.js app with a 0kb bundle",
-        link: "/blogs/0kb-nextjs-blog",
+        title: "My viral app ~ ScreenREC",
+        description: "How I shipped a web app that went viral",
+        link: "/blogs/my-viral-app-screenrec",
       }
     ],
     sender: "assistant",
