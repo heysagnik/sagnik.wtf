@@ -36,12 +36,12 @@ const CONFIG = {
   },
   media: {
     mobile: {
-      width: "140px",
-      height: "280px",
+      width: "160px",
+      height: "336px",
       gap: "12px"
     },
     web: {
-      maxHeight: "520px",
+      maxHeight: "580px",
       aspectRatio: "16 / 9"
     }
   },
