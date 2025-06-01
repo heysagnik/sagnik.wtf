@@ -2,6 +2,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import Script from "next/script";
+import {Analytics} from "@vercel/analytics/next";
 import { DOMAIN, metadata as appMetadata, viewport as appViewport } from "./metadata";
 
 const poppins = Poppins({
@@ -116,6 +117,7 @@ export default function RootLayout({
           src="https://my-github-cdn.vercel.app/api/cdn?file=script.js"
           strategy="afterInteractive"
         />
+        <Analytics />
       </body>
     </html>
   );
