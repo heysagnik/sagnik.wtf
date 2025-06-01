@@ -92,6 +92,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="google-site-verification" content="9DeudNztZelUduAow0vGahP-8zLV5mk9f1JZ4_8CVVk" />
       </head>
       <body
         className={`${poppins.variable} font-sans antialiased h-full w-full bg-black text-white overflow-hidden`}

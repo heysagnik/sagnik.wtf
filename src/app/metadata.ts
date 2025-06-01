@@ -95,7 +95,6 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "9DeudNztZelUduAow0vGahP",
     yandex: "e4d56f8fcfa8c002",
     other: {
       me: ["mailto:sahoosagnik1@gmail.com", "https://github.com/heysagnik"],
