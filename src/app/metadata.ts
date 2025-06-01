@@ -4,9 +4,9 @@ export const DOMAIN = "https://sagnik-wtf.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(DOMAIN),
-  title: "Sagnik Sahoo | Expert Product Designer & UI/UX Developer",
+  title: "Sagnik Sahoo | Full-Stack Software Developer & Interface Architect",
   description:
-    "Sagnik Sahoo: Award-winning product designer and UI/UX developer with 5+ years experience creating intuitive digital experiences and high-performance web applications.",
+    "Expert software developer creating stunning web applications with React, Next.js, TypeScript & modern frontend architecture. View portfolio of high-performance, accessible digital experiences.",
   authors: [
     {
       name: "Sagnik Sahoo",
@@ -15,22 +15,37 @@ export const metadata: Metadata = {
   ],
   creator: "Sagnik Sahoo",
   keywords: [
+    // Primary keywords
     "Sagnik Sahoo",
-    "Product Designer",
-    "UI/UX Developer",
+    "Software Developer",
     "Frontend Engineer",
-    "Interactive Design",
-    "User Experience",
-    "User Interface",
-    "Web Design",
-    "Portfolio",
-    "Design Systems",
+    "Web Developer",
     "React Developer",
-    "NextJS Developer",
-    "Web Applications",
-    "Digital Products",
-    "Mobile App Designer",
-    "Responsive Design",
+    "Next.js Developer",
+
+    // Secondary keywords
+    "TypeScript Expert",
+    "JavaScript Specialist",
+    "UI Developer",
+    "Interface Designer",
+    "Frontend Architect",
+    "Web Application Developer",
+
+    // Long-tail keywords
+    "Custom React Component Developer",
+    "Modern Web Applications Developer",
+    "High-Performance Web Interfaces",
+    "Responsive Design Expert",
+    "User Experience Focused Developer",
+    "Clean Code Practitioner",
+    "Tailwind CSS Developer",
+    "Frontend Performance Optimization",
+    "Web Accessibility Specialist",
+    "Interactive UI Developer",
+    "Beautiful Digital Experiences",
+    "React Hooks Expert",
+    "API Integration Specialist",
+    "State Management Expert",
   ],
   publisher: "Sagnik Sahoo",
   category: "Technology",
@@ -42,24 +57,24 @@ export const metadata: Metadata = {
     gender: "male",
     locale: "en_US",
     url: DOMAIN,
-    title: "Sagnik Sahoo | Expert Product Designer & UI/UX Developer",
+    title: "Sagnik Sahoo | Full-Stack Software Developer & Interface Architect",
     description:
-      "Sagnik Sahoo: Award-winning product designer and UI/UX developer crafting innovative, user-centric digital experiences. Explore my portfolio of successful projects.",
-    siteName: "Sagnik Sahoo | Portfolio",
+      "Discover the portfolio of Sagnik Sahoo, a software developer specializing in crafting beautiful web applications with React, Next.js & TypeScript. View projects demonstrating clean code, accessibility & stunning UIs.",
+    siteName: "Sagnik Sahoo | Developer Portfolio",
     images: [
       {
         url: `${DOMAIN}/og.png`,
         width: 1200,
         height: 630,
-        alt: "Sagnik Sahoo - Product Designer & UI/UX Developer Portfolio",
+        alt: "Sagnik Sahoo - Software Developer Portfolio featuring React and Next.js projects",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sagnik Sahoo | Expert Product Designer & UI/UX Developer",
+    title: "Sagnik Sahoo | Full-Stack Software Developer & Interface Architect",
     description:
-      "Sagnik Sahoo: Award-winning product designer and UI/UX developer crafting innovative, user-centric digital experiences. Explore my portfolio.",
+      "Expert React & Next.js developer creating high-performance web applications with beautiful interfaces. View my portfolio of innovative digital experiences built with modern web technologies.",
     creator: "@heysagnik",
     images: [`${DOMAIN}/og.png`],
   },
@@ -69,6 +84,7 @@ export const metadata: Metadata = {
     "max-image-preview": "large",
     "max-snippet": -1,
     "max-video-preview": -1,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
@@ -78,8 +94,18 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    google: "9DeudNztZelUduAow0vGahP",
+    yandex: "e4d56f8fcfa8c002",
+    other: {
+      me: ["mailto:sahoosagnik1@gmail.com", "https://github.com/heysagnik"],
+    },
+  },
   alternates: {
     canonical: DOMAIN,
+    languages: {
+      "en-US": `${DOMAIN}/en-US`,
+    },
     types: {
       "application/rss+xml": `${DOMAIN}/feed.xml`,
     },
@@ -87,13 +113,21 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sagnik Sahoo | Portfolio",
+    title: "Sagnik Sahoo | Developer Portfolio",
     startupImage: [
-      { url: `${DOMAIN}/apple-touch-startup-image-640x1136.png`, media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" },
-      { url: `${DOMAIN}/apple-touch-startup-image-750x1334.png`, media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" },
+      {
+        url: `${DOMAIN}/apple-touch-startup-image-640x1136.png`,
+        media:
+          "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: `${DOMAIN}/apple-touch-startup-image-750x1334.png`,
+        media:
+          "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
     ],
   },
-  applicationName: "Sagnik Sahoo | Portfolio",
+  applicationName: "Sagnik Sahoo | Developer Portfolio",
   formatDetection: {
     telephone: false,
     address: false,
@@ -117,20 +151,23 @@ export const metadata: Metadata = {
         color: "#000000",
       },
       {
-        rel: 'icon',
-        url: '/android-chrome-192x192.png',
-        sizes: '192x192',
-        type: 'image/png',
+        rel: "icon",
+        url: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
       },
       {
-        rel: 'icon',
-        url: '/android-chrome-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
+        rel: "icon",
+        url: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   },
   manifest: "/manifest.json",
+  archives: [`${DOMAIN}/projects`],
+  bookmarks: [`${DOMAIN}/projects`],
+  assets: [`${DOMAIN}/assets`],
 };
 
 export const viewport = {
@@ -140,4 +177,5 @@ export const viewport = {
   userScalable: true,
   viewportFit: "cover",
   themeColor: "#000000",
+  colorScheme: "dark light",
 };
