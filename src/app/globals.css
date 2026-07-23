@@ -133,38 +133,66 @@
 }
 
 
-.apple-maps-popup .leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  padding: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+/* ---------- Consolidated component keyframes ----------
+   Moved out of per-component <style jsx> blocks so each mount doesn't
+   re-inject the same global CSS. Class names are unique enough to live at
+   the top level. */
+
+/* Typing indicator dots (typing-indicator.tsx) */
+.typing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #8e8e93;
+  opacity: 0.8;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
 }
 
-.apple-maps-popup .leaflet-popup-tip {
-  background: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+/* Map widget flight intro + cloud drift (map-widget.tsx) */
+@keyframes introSwoop {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.intro-animation-active { animation: introSwoop 0.5s ease-out forwards; }
 
-.leaflet-control-zoom a {
-  border-radius: 50% !important;
-  width: 34px !important;
-  height: 34px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+@keyframes cloudDrift {
+  0% { transform: translateX(-80%) translateY(-10%); opacity: 0.4; }
+  50% { opacity: 0.7; }
+  100% { transform: translateX(20%) translateY(10%); opacity: 0.4; }
 }
+.cloud-animation { animation: cloudDrift 70s linear infinite alternate; }
 
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
+/* Photo message container (photos-message.tsx) */
+.photo-message-container {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  transform: translateZ(0);
+  will-change: transform;
+}
+.photo-message-container p { margin: 0; }
+.ios-photos-sent { background: #0b93f6; color: white; }
+.ios-photos-received { background: #e5e5ea; color: black; }
+
+/* Keep lightbox controls comfortably tappable on phones */
+@media (max-width: 640px) {
+  .photo-message-container [role="button"] {
+    min-height: 44px;
   }
-  100% {
-    background-position: -200% 0;
-  }
 }
 
-.animate-shimmer {
-  animation: shimmer 1.5s infinite linear;
+/* Lock background scroll while any modal/lightbox is open */
+body:has([aria-modal="true"]) {
+  overflow: hidden;
+  padding-right: var(--scrollbar-width, 0);
 }
 
 .page-transitioning {

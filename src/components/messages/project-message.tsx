@@ -1,40 +1,19 @@
 import { memo, useState, useCallback, useMemo } from "react"
 import Image from "next/image"
-import { ShimmerEffect } from "../ui/shimmer-effect"
-
-interface ProjectType {
-  title: string;
-  image?: string;
-  description?: string;
-  demoUrl?: string;
-  githubUrl?: string;
-  technologies?: string[];
-}
-
-interface ProjectMessageProps {
-  content?: string;
-  project: ProjectType;
-  bubbleClass: string;
-  bubbleMaxWidth: string;
-}
-
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
-
-const isVideoFile = (url?: string): boolean => {
-  if (!url) return false;
-  return VIDEO_EXTENSIONS.some(ext => url.toLowerCase().endsWith(ext));
-};
+import type { Project } from "@/lib/types"
+import { bubbleClassFor, type BubbleProps } from "@/lib/message-styles"
+import { isVideoFile } from "./photos/preload"
 
 const ExternalLinkIcon = memo(() => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="12" 
-    height="12" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
     strokeLinejoin="round"
   >
     <line x1="7" y1="17" x2="17" y2="7" />
@@ -44,7 +23,7 @@ const ExternalLinkIcon = memo(() => (
 
 ExternalLinkIcon.displayName = "ExternalLinkIcon";
 
-export const TechnologyBadge = memo(({ tech }: { tech: string }) => (
+const TechnologyBadge = memo(({ tech }: { tech: string }) => (
   <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-white/10 text-white/90">
     {tech}
   </span>
@@ -52,14 +31,14 @@ export const TechnologyBadge = memo(({ tech }: { tech: string }) => (
 
 TechnologyBadge.displayName = "TechnologyBadge";
 
-export const ProjectMedia = memo(({ project, onMediaLoad }: { 
-  project: ProjectType, 
-  onMediaLoad: () => void 
+const ProjectMedia = memo(({ project, onMediaLoad }: {
+  project: Project,
+  onMediaLoad: () => void
 }) => {
   const mediaUrl = project.image || "/placeholder.svg";
-  const isVideo = isVideoFile(project.image);
+  const isVideo = isVideoFile(project.image || "");
   const projectUrl = project.demoUrl || project.githubUrl;
-  
+
   return (
     <div className="w-full h-full relative">
       {isVideo ? (
@@ -85,9 +64,9 @@ export const ProjectMedia = memo(({ project, onMediaLoad }: {
           priority
         />
       )}
-      
+
       {projectUrl && (
-        <a 
+        <a
           href={projectUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -103,9 +82,9 @@ export const ProjectMedia = memo(({ project, onMediaLoad }: {
 
 ProjectMedia.displayName = "ProjectMedia";
 
-const ProjectHeader = memo(({ project }: { project: ProjectType }) => {
+const ProjectHeader = memo(({ project }: { project: Project }) => {
   const projectUrl = project.demoUrl || project.githubUrl;
-  
+
   return (
     <div className="flex justify-between items-start">
       <h3 className="text-[14px] font-medium text-white/95">{project.title}</h3>
@@ -136,11 +115,17 @@ const ProjectTechnologies = memo(({ technologies }: { technologies: string[] }) 
 
 ProjectTechnologies.displayName = "ProjectTechnologies";
 
-export const ProjectMessage = memo(({ 
+interface ProjectMessageProps extends BubbleProps {
+  content?: string;
+  project: Project;
+}
+
+export const ProjectMessage = memo(({
   content,
   project,
-  bubbleClass,
-  bubbleMaxWidth
+  isUser,
+  maxWidth,
+  isTail
 }: ProjectMessageProps) => {
   const [mediaLoaded, setMediaLoaded] = useState(false);
 
@@ -148,36 +133,37 @@ export const ProjectMessage = memo(({
     setMediaLoaded(true);
   }, []);
 
-  const hasTechnologies = useMemo(() => 
+  const hasTechnologies = useMemo(() =>
     project.technologies && project.technologies.length > 0,
     [project.technologies]
   );
 
   return (
-    <div className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}>
+    <div className={`${bubbleClassFor(isUser, isTail)} px-4 py-2 ${maxWidth} relative`}>
       <div className="space-y-2">
         {content && (
           <p className="text-[14px] leading-tight">{content}</p>
         )}
-        
+
         <div className="overflow-hidden rounded-lg">
           <div className="flex flex-col">
             <div className="relative h-[112px] bg-gray-800/40">
               {!mediaLoaded && (
-                <div className="absolute inset-0 overflow-hidden bg-gray-800/80 rounded-lg">
-                  <ShimmerEffect />
-                </div>
+                <div
+                  className="absolute inset-0 animate-pulse bg-gray-800/80 rounded-lg"
+                  aria-hidden="true"
+                />
               )}
-              
-              <ProjectMedia 
-                project={project} 
-                onMediaLoad={handleMediaLoad} 
+
+              <ProjectMedia
+                project={project}
+                onMediaLoad={handleMediaLoad}
               />
             </div>
-            
+
             <div className="p-2.5">
               <ProjectHeader project={project} />
-              
+
               {project.description && (
                 <p className="text-[12px] text-white/70 leading-tight mt-1">
                   {project.description}

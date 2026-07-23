@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { PROFILE } from "@/lib/profile";
 
 interface CompactHeaderProps {
   isVisible: boolean;
@@ -54,13 +55,6 @@ const ANIMATION_CONFIG = {
   }
 } as const;
 
-const PROFILE_DATA = {
-  name: "Sagnik Sahoo",
-  title: "Developer",
-  avatar: "/char.png",
-  socialUrl: "https://x.com/heysagnik"
-} as const;
-
 const BUTTON_STYLES = [
   "ml-auto px-3 py-1.5 text-xs font-medium text-white",
   "bg-gradient-to-b from-blue-500 to-blue-700",
@@ -86,7 +80,7 @@ const UserAvatar = memo(() => (
   >
     <div className="rounded-full overflow-hidden w-full h-full">
       <Image
-        src={PROFILE_DATA.avatar}
+        src={PROFILE.avatar}
         alt="User Avatar"
         width={40}
         height={40}
@@ -106,13 +100,13 @@ const UserInfo = memo(() => (
       className="font-medium text-white/90 text-base"
       variants={ANIMATION_CONFIG.child}
     >
-      {PROFILE_DATA.name}
+      {PROFILE.name}
     </motion.h1>
-    <motion.p 
+    <motion.p
       className="text-white/50 text-xs"
       variants={ANIMATION_CONFIG.child}
     >
-      {PROFILE_DATA.title}
+      {PROFILE.shortTitle}
     </motion.p>
   </div>
 ));
@@ -121,7 +115,7 @@ UserInfo.displayName = 'UserInfo';
 
 const FollowButton = memo(() => {
   const handleFollowClick = () => {
-    window.open(PROFILE_DATA.socialUrl, '_blank');
+    window.open(PROFILE.socialUrl, '_blank');
   };
 
   return (

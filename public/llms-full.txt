@@ -1,0 +1,54 @@
+# Sagnik Sahoo - Full Knowledge Base & Portfolio Context
+
+## Overview
+This document contains the complete context, bio, projects, and articles for Sagnik Sahoo. It is structured for retrieval-augmented generation (RAG), search indexing, and deep AI model reasoning.
+
+---
+
+## Bio & Background
+Sagnik Sahoo (@heysagnik) is an Indian product designer, full-stack software developer, and interface architect. He builds high-performance web applications, interactive UI components, and modern digital experiences using React, Next.js, TypeScript, Tailwind CSS, and Framer Motion.
+
+- Website: https://sagnik-wtf.vercel.app
+- GitHub: https://github.com/heysagnik
+- LinkedIn: https://www.linkedin.com/in/heysagnik/
+- Twitter: https://twitter.com/heysagnik
+- Email: sahoosagnik1@gmail.com
+
+---
+
+## Featured Work & Projects
+1. **Phisguard App**
+   - Category: Mobile / Security
+   - Description: A phishing guard security application engineered to detect and block malicious links, unauthorized credential harvesters, and deceptive online portals in real time.
+
+2. **Doctor Booking App**
+   - Category: Mobile / Healthcare
+   - Description: Comprehensive medical appointment booking platform featuring doctor discovery, real-time availability slots, interactive user profiles, and appointment management.
+
+3. **ScreenREC**
+   - Category: Web / Utility
+   - Description: Fast, privacy-focused browser screen recorder built with WebRTC media recording APIs allowing zero-install video captures and instant downloads.
+
+4. **Linkees**
+   - Category: Web / Application
+   - Description: Customizable link-in-bio web application for creators to aggregate social media profiles, portfolios, and content channels.
+
+---
+
+## Content & Essays
+### 1. The Art of Procrastination: How I Still Get Things Done
+- URL: https://sagnik-wtf.vercel.app/blogs/art-of-procrastination
+- Core thesis: Strategic procrastination can serve as a superpower by letting subconscious ideation mature, utilizing pressure-driven focus, and cycling across multiple active projects.
+
+### 2. Open Source: More Than Just Code
+- URL: https://sagnik-wtf.vercel.app/blogs/open-source
+- Core thesis: Open source software is fundamentally about community collaboration, inclusive learning, overcoming imposter syndrome, and building public tools together.
+
+### 3. My Viral App: Screen Recording Tool
+- URL: https://sagnik-wtf.vercel.app/blogs/my-viral-app-screenrec
+- Core thesis: The product journey, user growth strategy, and architecture behind ScreenREC's viral reception.
+
+---
+
+## Summary Keywords for AI Search
+Sagnik Sahoo, sagnik.wtf, heysagnik, Full Stack Developer, Frontend Architect, Product Designer, React 19, Next.js 16, TypeScript, UI UX Designer, Web Accessibility, Micro-interactions, Design Systems, Tailwind CSS.

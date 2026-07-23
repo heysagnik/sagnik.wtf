@@ -1,20 +1,21 @@
+import { bubbleClassFor, type BubbleProps } from "@/lib/message-styles";
+
+interface ResumeMessageProps extends BubbleProps {
+  content?: string;
+  resumeLink: string;
+  resumeLinkText?: string;
+}
+
 export const ResumeMessage = ({
   content,
   resumeLink,
   resumeLinkText,
-  bubbleClass,
-  bubbleMaxWidth,
-  isUser
-}: {
-  content?: string;
-  resumeLink: string;
-  resumeLinkText?: string;
-  bubbleClass: string;
-  bubbleMaxWidth: string;
-  isUser: boolean;
-}) => {
+  isUser,
+  maxWidth,
+  isTail,
+}: ResumeMessageProps) => {
   return (
-    <div className={`${bubbleClass} px-4 py-3 ${bubbleMaxWidth} relative`}>
+    <div className={`${bubbleClassFor(isUser, isTail)} px-4 py-3 ${maxWidth} relative`}>
       {content && (
         <p className="text-[14px] leading-tight mb-2.5">{content}</p>
       )}
@@ -22,9 +23,9 @@ export const ResumeMessage = ({
         href={resumeLink}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${isUser 
-          ? 'bg-white/20 text-white hover:bg-white/30 active:bg-white/40' 
-          : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'} 
+        className={`${isUser
+          ? 'bg-white/20 text-white hover:bg-white/30 active:bg-white/40'
+          : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'}
           rounded-lg py-2.5 px-4 text-sm font-medium flex items-center justify-center mt-1.5 transition-all duration-200 group w-full sm:w-auto text-center shadow-md`}
       >
         {resumeLinkText || "View Resume"}

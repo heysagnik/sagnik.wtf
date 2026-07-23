@@ -264,6 +264,7 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
         alt="Cloud decorative element" 
         draggable="false"
         className="absolute top-0 left-0 w-full h-auto cloud-animation opacity-60 blur-sm z-[1] pointer-events-none"
+        style={{ width: '100%', height: 'auto' }}
       />
       
       <div className="relative w-full h-full z-[2]">
@@ -275,6 +276,8 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
           draggable="false"
           className="absolute z-[4] pointer-events-none transition-opacity duration-100"
           style={{
+            width: 'auto',
+            height: 'auto',
             transform: `translate(${planeState.x}px, ${planeState.y}px) rotate(${planeState.rotation}deg) scale(${ANIMATION_CONFIG.plane.defaultScale})`,
             opacity: planeState.opacity,
             willChange: 'transform, opacity',
@@ -289,6 +292,8 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
           draggable="false"
           className="absolute z-[3] pointer-events-none transition-opacity duration-100"
           style={{ 
+            width: 'auto',
+            height: 'auto',
             transform: `translate(${planeState.shadowX}px, ${planeState.shadowY}px) rotate(${planeState.shadowRotation}deg) skewX(-15deg) scale(${ANIMATION_CONFIG.plane.shadow.scale})`,
             opacity: planeState.opacity * ANIMATION_CONFIG.plane.shadow.opacity,
             filter: 'blur(1.5px)',
@@ -297,13 +302,17 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
         />
         
         <div className="absolute inset-0 w-full h-full overflow-hidden">
-          <Image
-            src={MAP_CONFIG.images.map.src}
-            alt={`Map showing ${locationCity}`}
-            fill
-            className="object-cover scale-200 -translate-x-10 -translate-y-8"
-            priority
-          />
+          <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%]">
+            <Image
+              src={MAP_CONFIG.images.map.src}
+              alt={`Map showing ${locationCity}`}
+              fill
+              unoptimized
+              sizes="800px"
+              className="object-cover"
+              priority
+            />
+          </div>
         </div>
         
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/5 via-black/5 to-transparent z-[5] pointer-events-none"></div>
@@ -317,7 +326,7 @@ const MapInner = memo(({ locationCity, className = "" }: MapWrapperProps) => {
 
 MapInner.displayName = "MapInner";
 
-export default function MapWidget({ locationCity }: { locationCity: string }) {
+function MapWidget({ locationCity }: { locationCity: string }) {
   const [visible, setVisible] = useState(false);
   
   useEffect(() => {
@@ -325,27 +334,12 @@ export default function MapWidget({ locationCity }: { locationCity: string }) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Keyframes (`introSwoop`, `cloudDrift`) and classes
+  // (`.intro-animation-active`, `.cloud-animation`) live in globals.css.
   return (
     <div
       className={`rounded-xl overflow-hidden shadow-lg bg-gray-100 h-[252px] transition-opacity duration-500 ease-out ${visible ? 'opacity-100 intro-animation-active' : 'opacity-0'}`}
     >
-      <style jsx global>{`
-        @keyframes intro-swoop { 
-          from { opacity: 0; transform: translateY(20px); } 
-          to { opacity: 1; transform: translateY(0); } 
-        }
-        .intro-animation-active { 
-          animation: intro-swoop 0.5s ease-out forwards; 
-        }
-        @keyframes cloud-drift { 
-          0% { transform: translateX(-80%) translateY(-10%); opacity: 0.4; } 
-          50% { opacity: 0.7; } 
-          100% { transform: translateX(20%) translateY(10%); opacity: 0.4; } 
-        }
-        .cloud-animation { 
-          animation: cloud-drift 70s linear infinite alternate; 
-        }
-      `}</style>
       <MapInner locationCity={locationCity} />
     </div>
   );

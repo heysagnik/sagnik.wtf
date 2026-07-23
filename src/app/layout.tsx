@@ -1,6 +1,5 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
 import Script from "next/script";
 import {Analytics} from "@vercel/analytics/next";
 import { DOMAIN, metadata as appMetadata, viewport as appViewport } from "./metadata";
@@ -22,7 +21,11 @@ export default function RootLayout({
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `${DOMAIN}/#person`,
     name: "Sagnik Sahoo",
+    givenName: "Sagnik",
+    familyName: "Sahoo",
+    alternateName: ["heysagnik", "Sagnik"],
     url: DOMAIN,
     sameAs: [
       "https://twitter.com/heysagnik",
@@ -31,18 +34,14 @@ export default function RootLayout({
       "https://dribbble.com/heysagnik",
       "https://medium.com/@heysagnik",
     ],
-    jobTitle: "Product Designer & UI/UX Developer",
-    description: "Experienced product designer and developer specializing in creating intuitive UI/UX, interactive interfaces, and modern web applications.",
+    jobTitle: "Full-Stack Software Developer & Interface Architect",
+    description: "Full-stack software developer and product designer creating high-performance web applications with React, Next.js & TypeScript.",
     image: `${DOMAIN}/og.png`,
-    worksFor: {
-      "@type": "Organization",
-      name: "Sagnik Sahoo"
-    },
-    alumniOf: [],
     knowsAbout: [
       "Product Design", "UI/UX Design", "Frontend Development", "Web Development",
-      "Interactive Design", "Design Systems", "React", "Next.js", "User Experience", "User Interface"
+      "TypeScript", "React", "Next.js", "Tailwind CSS", "Design Systems", "Web Architecture", "Software Engineering"
     ],
+    email: "mailto:sahoosagnik1@gmail.com",
     gender: "Male",
     nationality: "Indian"
   };
@@ -50,34 +49,71 @@ export default function RootLayout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Sagnik Sahoo | Portfolio",
+    "@id": `${DOMAIN}/#website`,
+    name: "Sagnik Sahoo | Developer & Interface Architect",
+    alternateName: ["sagnik-wtf", "Sagnik Sahoo Portfolio"],
     url: DOMAIN,
     publisher: {
-      "@type": "Person",
-      name: "Sagnik Sahoo",
-      url: DOMAIN
+      "@id": `${DOMAIN}/#person`
     },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${DOMAIN}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string"
-    },
-    description: "Portfolio of Sagnik Sahoo, a product designer and UI/UX developer.",
+    description: "Portfolio of Sagnik Sahoo, showcasing full-stack projects, UI/UX designs, and technical articles.",
+  };
+
+  const profilePageSchema = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${DOMAIN}/#profilepage`,
+    url: DOMAIN,
+    name: "Sagnik Sahoo Profile & Portfolio",
+    mainEntity: {
+      "@id": `${DOMAIN}/#person`
+    }
   };
 
   const portfolioSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Sagnik Sahoo's Portfolio",
-    description: "Showcasing the design and development work of Sagnik Sahoo",
-    url: `${DOMAIN}/projects`,
+    "@id": `${DOMAIN}/#craftpage`,
+    name: "Sagnik Sahoo's Projects & Crafts",
+    description: "Showcasing web applications, mobile tools, and design projects by Sagnik Sahoo.",
+    url: `${DOMAIN}/craft`,
     mainEntity: {
       "@type": "ItemList",
-      itemListElement: []
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Sidebar Component",
+          url: `${DOMAIN}/craft`
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Phisguard Security App",
+          url: `${DOMAIN}/craft`
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "Doctor Booking App",
+          url: `${DOMAIN}/craft`
+        },
+        {
+          "@type": "ListItem",
+          position: 4,
+          name: "ScreenREC",
+          url: `${DOMAIN}/craft`
+        },
+        {
+          "@type": "ListItem",
+          position: 5,
+          name: "Linkees",
+          url: `${DOMAIN}/craft`
+        }
+      ]
     }
   };
 
- 
   return (
     <html lang="en" className="h-full dark">
       <head>
@@ -107,6 +143,11 @@ export default function RootLayout({
           id="schema-org-website"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <Script
+          id="schema-org-profile"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePageSchema) }}
         />
         <Script
           id="schema-org-portfolio"

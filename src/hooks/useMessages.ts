@@ -7,44 +7,56 @@ const TYPING_DELAY_FACTOR = 30;
 const MIN_TYPING_DELAY = 1000;
 const MAX_TYPING_DELAY = 1500;
 
-export function useMessages() {
-  const [allMessages, setAllMessages] = useState<MessageType[]>([]);
-  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>([]);
+/**
+ * @param instant Skip the staggered reveal and load every message at once —
+ * used when returning from another page (e.g. the blog), where re-watching
+ * the intro would feel slow. First-time visits reveal messages one by one,
+ * like they're arriving in iOS Messages.
+ */
+export function useMessages(instant: boolean) {
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // The full set of scripted message ids, known upfront and set once —
+  // unlike `messages`, this doesn't grow through the staggered reveal, so
+  // consumers (e.g. the reactions fetch) don't refire on every reveal step.
+  const [messageIds, setMessageIds] = useState<string[]>([]);
 
   useEffect(() => {
-    setAllMessages(generateInitialMessages());
-  }, []);
-
-  useEffect(() => {
+    const allMessages = generateInitialMessages();
     if (allMessages.length === 0) return;
-    
-    if (currentIndex === 0) {
-      setVisibleMessages([allMessages[0]]);
-      setCurrentIndex(1);
+
+    setMessageIds(allMessages.map((m) => m.id));
+
+    if (instant) {
+      setMessages(allMessages);
       return;
     }
-    
-    if (currentIndex < allMessages.length) {
-      setIsTyping(true);
-      
-      const message = allMessages[currentIndex];
-      const contentLength = message.content?.length || 0;
+
+    setMessages([allMessages[0]]);
+
+    let index = 1;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const revealNext = () => {
+      if (index >= allMessages.length) return;
+      const message = allMessages[index];
       const typingDelay = Math.min(
-        MAX_TYPING_DELAY, 
-        Math.max(MIN_TYPING_DELAY, contentLength * TYPING_DELAY_FACTOR)
+        MAX_TYPING_DELAY,
+        Math.max(MIN_TYPING_DELAY, (message.content?.length || 0) * TYPING_DELAY_FACTOR)
       );
-      
-      const typingTimer = setTimeout(() => {
+
+      setIsTyping(true);
+      timer = setTimeout(() => {
         setIsTyping(false);
-        setVisibleMessages(prev => [...prev, message]);
-        setCurrentIndex(currentIndex + 1);
+        setMessages(prev => [...prev, message]);
+        index += 1;
+        revealNext();
       }, typingDelay);
-      
-      return () => clearTimeout(typingTimer);
-    }
-  }, [currentIndex, allMessages]);
+    };
+
+    revealNext();
+    return () => clearTimeout(timer);
+  }, [instant]);
 
   const addMessage = useCallback((content: string) => {
     const newMessage: MessageType = {
@@ -54,22 +66,17 @@ export function useMessages() {
       timestamp: Date.now(),
       type: "text"
     };
-    
-    setAllMessages(prev => [...prev, newMessage]);
-    setVisibleMessages(prev => [...prev, newMessage]);
-    
+
+    setMessages(prev => [...prev, newMessage]);
+
     return newMessage;
   }, []);
 
-  const loadMoreMessages = useCallback((count: number = 3) => {
-    return [...generateInitialMessages().slice(0, count)];
-  }, []);
-
   return {
-    messages: visibleMessages,
+    messages,
     isTyping,
     addMessage,
-    loadMoreMessages,
-    setAllMessages
+    setIsTyping,
+    messageIds,
   };
 }

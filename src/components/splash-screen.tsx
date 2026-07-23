@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { EASING } from "@/lib/motion";
+import { BRAND } from "@/lib/profile";
 
 const TIMING_CONFIG = {
   displayDuration: 2200,
@@ -17,7 +19,7 @@ const ANIMATION_CONFIG = {
       scale: 1,
       transition: { 
         duration: 0.5,
-        ease: [0.25, 0.1, 0.25, 1.0]
+        ease: EASING.expo
       }
     },
     exit: {
@@ -52,13 +54,6 @@ const ANIMATION_CONFIG = {
     animate: { width: "40%" },
     transition: { duration: 0.4, delay: 0.5 }
   }
-} as const;
-
-const BRAND_DATA = {
-  name: "sagnik",
-  domain: ".wtf",
-  title: "Product developer",
-  avatar: "/char.png"
 } as const;
 
 const STYLES = {
@@ -114,11 +109,13 @@ const BackgroundElements = () => (
 const Avatar = () => (
   <motion.div {...ANIMATION_CONFIG.avatar} className={STYLES.avatar}>
     <Image 
-      src={BRAND_DATA.avatar} 
+      src={BRAND.avatar} 
       alt="Avatar" 
       width={64} 
       height={64} 
       className={STYLES.avatarImage} 
+      priority
+      loading="eager"
     />
   </motion.div>
 );
@@ -130,9 +127,9 @@ const Divider = ({ config, className }: { config: DividerConfig; className: stri
 const BrandContent = () => (
   <motion.div {...ANIMATION_CONFIG.content} className="relative">
     <h2 className={STYLES.title}>
-      {BRAND_DATA.name}<span className={STYLES.domain}>{BRAND_DATA.domain}</span>
+      {BRAND.name}<span className={STYLES.domain}>{BRAND.domain}</span>
     </h2>
-    <p className={STYLES.subtitle}>{BRAND_DATA.title}</p>
+    <p className={STYLES.subtitle}>{BRAND.title}</p>
   </motion.div>
 );
 

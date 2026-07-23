@@ -74,13 +74,13 @@ const useNavigationCheck = () => {
 
 export default function HomePageContent() {
   const { skipIntroAnimation, setSkipIntroAnimation, shouldSkipAnimation } = useNavigationCheck();
-  const { 
-    showSplashScreen, 
-    fadeSplashScreen, 
-    startSplashSequence, 
-    startTransition, 
-    skipSplash, 
-    cleanup 
+  const {
+    showSplashScreen,
+    fadeSplashScreen,
+    startSplashSequence,
+    startTransition,
+    skipSplash,
+    cleanup
   } = useSplashScreenState();
 
   useEffect(() => {

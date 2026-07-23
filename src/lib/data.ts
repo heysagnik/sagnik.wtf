@@ -1,6 +1,34 @@
 import type { MessageType, Blog } from "./types";
 import { getFallbackBlogs } from "./blogService"; // Uses the client-safe service
 
+const MINUTE = 60_000;
+// Arbitrary fixed epoch — only the relative gaps between messages matter,
+// since those gaps drive avatar/tail grouping (see lib/message-grouping.ts).
+const BASE_TIMESTAMP = 1_700_000_000_000;
+
+// Minutes since the previous message, keyed by message id. Omitted ids
+// default to a small in-burst gap; larger values mark a new topic — those
+// messages start a fresh avatar group, like a reply sent after a pause.
+const GAP_MINUTES: Record<string, number> = {
+  "2": 2.5,
+  "3": 2,
+  "4": 2,
+  "5": 2,
+  "6": 2,
+  "6.1": 1.5,
+  "6.4": 2,
+  "6.7": 2,
+  "7": 2.5,
+};
+
+function withTimestamps<T extends { id: string }>(messages: T[]): (T & { timestamp: number })[] {
+  let t = BASE_TIMESTAMP;
+  return messages.map((message, index) => {
+    if (index > 0) t += (GAP_MINUTES[message.id] ?? 0.15) * MINUTE;
+    return { ...message, timestamp: t };
+  });
+}
+
 export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
   let blogsToDisplay: Blog[];
 
@@ -11,7 +39,7 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
     blogsToDisplay = getFallbackBlogs();
   }
 
-  return [
+  return withTimestamps([
     {
       id: "1",
       content: "yo, sagnik here.",
@@ -28,11 +56,6 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
           caption: "Giving a small talk"
           
         },
-        // {
-        //   src: "/me3.jpg",
-        //   alt: "Sagnik's second photo",
-        //   caption: "Mirror selfie vibes",
-        // },
       ],
       type: "photos",
       sender: "assistant",
@@ -181,6 +204,6 @@ export function generateInitialMessages(markdownBlogs?: Blog[]): MessageType[] {
       type: "text",
       sender: "assistant",
     },
-  ];
+  ]) as MessageType[];
 }
 

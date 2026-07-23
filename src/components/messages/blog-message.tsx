@@ -1,35 +1,31 @@
 import { useState, useCallback, useRef, useMemo, memo } from "react"
 import { motion } from "framer-motion"
+import type { Blog } from "@/lib/types"
+import { bubbleClassFor, type BubbleProps } from "@/lib/message-styles"
 
-interface BlogItemType {
-  title: string;
-  description: string;
-  link?: string;
-}
+const HOVER_ROTATION_MULTIPLIER = 10
+const HOVER_SCALE = 1.02
+const ANIMATION_DURATION = "0.2s"
 
-const HOVER_ROTATION_MULTIPLIER = 10;
-const HOVER_SCALE = 1.02;
-const ANIMATION_DURATION = "0.2s";
-
-export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
+export const BlogItem = memo(({ blog }: { blog: Blog }) => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    
+
     const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const rotateY = ((e.clientX - centerX) / (rect.width / 2)) * HOVER_ROTATION_MULTIPLIER;
     const rotateX = -((e.clientY - centerY) / (rect.height / 2)) * HOVER_ROTATION_MULTIPLIER;
-    
+
     setRotation({ x: rotateX, y: rotateY });
   }, []);
-  
+
   const handleMouseEnter = useCallback(() => setIsHovering(true), []);
-  
+
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
     setRotation({ x: 0, y: 0 });
@@ -37,7 +33,7 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
 
   const handleBlogClick = useCallback(() => {
     if (!blog.link) return;
-    
+
     const separator = blog.link.includes('?') ? '&' : '?';
     const linkWithParam = `${blog.link}${separator}from=home`;
     window.location.href = linkWithParam;
@@ -45,7 +41,7 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
 
   const cardTransformStyle = useMemo(() => ({
     transform: isHovering
-      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${HOVER_SCALE})` 
+      ? `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${HOVER_SCALE})`
       : 'rotateX(0deg) rotateY(0deg) scale(1)',
     transition: `transform ${ANIMATION_DURATION} ease-out`
   }), [isHovering, rotation.x, rotation.y]);
@@ -78,7 +74,7 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
         "
         style={cardTransformStyle}
       >
-        <div 
+        <div
           className="relative transition-transform duration-300 ease-out"
           style={contentTransformStyle}
         >
@@ -94,22 +90,22 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
           <div
             className="
               absolute top-2.5 right-2.5 p-1 rounded-full
-              text-slate-400 group-hover:text-slate-100 
+              text-slate-400 group-hover:text-slate-100
               group-hover:bg-slate-600/50
               transition-all duration-300 ease-out
             "
             style={iconTransformStyle}
             aria-label={`Open ${blog.title}`}
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="14" 
-              height="14" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
               <path d="M7 17l9.2-9.2M17 17V7H7" />
@@ -123,16 +119,14 @@ export const BlogItem = memo(({ blog }: { blog: BlogItemType }) => {
 
 BlogItem.displayName = "BlogItem";
 
-interface BlogMessageProps {
+interface BlogMessageProps extends BubbleProps {
   content?: string;
-  blogs?: BlogItemType[];
-  bubbleClass: string;
-  bubbleMaxWidth: string;
+  blogs?: Blog[];
 }
 
-export const BlogMessage = ({ content, blogs, bubbleClass, bubbleMaxWidth }: BlogMessageProps) => {
+export const BlogMessage = ({ content, blogs, isUser, maxWidth, isTail }: BlogMessageProps) => {
   return (
-    <div className={`${bubbleClass} px-4 py-2 ${bubbleMaxWidth} relative`}>
+    <div className={`${bubbleClassFor(isUser, isTail)} px-4 py-2 ${maxWidth} relative`}>
       <div className="space-y-2">
         {content && (
           <p className="text-[14px] leading-tight mb-3">{content}</p>

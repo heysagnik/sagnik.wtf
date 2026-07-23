@@ -1,174 +1,203 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 interface ReactionAnimationProps {
   emoji: string;
   onComplete: () => void;
 }
 
-const ANIMATION_CONFIG = {
-  duration: 1200,
-  exitDelay: 350,
-  backgroundBlur: { duration: 0.25 },
-  emojiAnimation: { 
-    duration: 1.4, 
-    times: [0, 0.3, 0.6, 1],
-    ease: "easeOut"
-  },
-  shadowAnimation: {
-    duration: 1.1,
-    times: [0, 0.3, 0.6, 1],
-    ease: "easeInOut"
-  },
-  rotationAnimation: {
-    duration: 0.8,
-    times: [0, 0.6, 1],
-    ease: [0.34, 1.31, 0.64, 1]
-  },
-  particleAnimation: {
-    duration: 0.85,
-    delay: 0.1,
-    ease: "easeOut"
-  },
-  glowAnimation: {
-    duration: 0.9,
-    times: [0, 0.3, 0.7, 1],
-    ease: "easeOut"
+const getEmojiAnimationConfig = (emoji: string) => {
+  switch (emoji) {
+    case '❤️':
+      return {
+        duration: 1200,
+        hero: {
+          scale: [0, 1.5, 1.25, 1.6, 0],
+          y: [10, -25, -45, -75],
+          rotate: [0, -6, 6, 0],
+        },
+        heroTransition: { duration: 1.15, ease: [0.34, 1.56, 0.64, 1] },
+        particles: [
+          { x: -35, y: -65, scale: 0.9, delay: 0, rotate: -15 },
+          { x: 35, y: -65, scale: 0.9, delay: 0.05, rotate: 15 },
+          { x: -18, y: -85, scale: 1.15, delay: 0.08, rotate: -8 },
+          { x: 18, y: -85, scale: 1.15, delay: 0.1, rotate: 8 },
+          { x: 0, y: -105, scale: 1.3, delay: 0.12, rotate: 0 },
+        ],
+      };
+
+    case '🔥':
+      return {
+        duration: 1100,
+        hero: {
+          scale: [0.2, 1.7, 1.3, 0.4],
+          y: [15, -45, -80, -120],
+          rotate: [-15, 15, -10, 5, 0],
+        },
+        heroTransition: { duration: 1.0, ease: "easeOut" },
+        particles: [
+          { x: -15, y: -70, scale: 0.9, delay: 0, rotate: -10 },
+          { x: 15, y: -75, scale: 1.0, delay: 0.03, rotate: 10 },
+          { x: -8, y: -100, scale: 1.2, delay: 0.06, rotate: -5 },
+          { x: 8, y: -110, scale: 1.1, delay: 0.09, rotate: 5 },
+          { x: -25, y: -50, scale: 0.75, delay: 0.04, rotate: -20 },
+          { x: 25, y: -55, scale: 0.8, delay: 0.07, rotate: 20 },
+        ],
+      };
+
+    case '😂':
+      return {
+        duration: 1200,
+        hero: {
+          scale: [0, 1.5, 1.2, 1.4, 0.8, 0],
+          x: [0, -15, 15, -10, 5, 0],
+          y: [10, -30, -45, -60, -75],
+          rotate: [0, -25, 25, -20, 15, 0],
+        },
+        heroTransition: { duration: 1.15, ease: "easeInOut" },
+        particles: [
+          { x: -45, y: -40, scale: 1.0, delay: 0, rotate: -30 },
+          { x: 45, y: -40, scale: 1.0, delay: 0.05, rotate: 30 },
+          { x: -25, y: -70, scale: 1.2, delay: 0.08, rotate: -15 },
+          { x: 25, y: -70, scale: 1.2, delay: 0.1, rotate: 15 },
+          { x: 0, y: -55, scale: 0.8, delay: 0.03, rotate: 0 },
+        ],
+      };
+
+    case '💀':
+      return {
+        duration: 1250,
+        hero: {
+          scale: [0, 1.4, 1.3, 1.4, 0],
+          x: [0, -10, 10, -8, 8, -4, 0],
+          y: [10, -25, -55, -85],
+          rotate: [0, -10, 10, -5, 5, 0],
+        },
+        heroTransition: { duration: 1.2, ease: "easeInOut" },
+        particles: [
+          { x: -50, y: -45, scale: 0.8, delay: 0.02, rotate: -30 },
+          { x: 50, y: -45, scale: 0.8, delay: 0.05, rotate: 30 },
+          { x: -30, y: -75, scale: 1.0, delay: 0.08, rotate: -15 },
+          { x: 30, y: -75, scale: 1.0, delay: 0.1, rotate: 15 },
+          { x: 0, y: -95, scale: 1.2, delay: 0.12, rotate: 0 },
+        ],
+      };
+
+    case '😯':
+      return {
+        duration: 1100,
+        hero: {
+          scale: [0, 1.8, 1.4, 0.9, 0],
+          y: [10, -35, -55, -70],
+          rotate: [0, 0, 0, 0],
+        },
+        heroTransition: { duration: 1.05, ease: [0.175, 0.885, 0.32, 1.275] },
+        // 8 Radial Starburst Directional Particles
+        particles: [
+          { x: 0, y: -75, scale: 1.1, delay: 0, rotate: 0 },
+          { x: 55, y: -55, scale: 1.0, delay: 0.02, rotate: 45 },
+          { x: 75, y: 0, scale: 0.9, delay: 0.04, rotate: 90 },
+          { x: 55, y: 55, scale: 0.8, delay: 0.06, rotate: 135 },
+          { x: 0, y: 70, scale: 0.8, delay: 0.08, rotate: 180 },
+          { x: -55, y: 55, scale: 0.8, delay: 0.06, rotate: 225 },
+          { x: -75, y: 0, scale: 0.9, delay: 0.04, rotate: 270 },
+          { x: -55, y: -55, scale: 1.0, delay: 0.02, rotate: 315 },
+        ],
+      };
+
+    case '😢':
+      return {
+        duration: 1200,
+        hero: {
+          scale: [0, 1.3, 1.1, 0.6, 0],
+          y: [0, -30, -15, 30, 60],
+          rotate: [-6, 6, -4, 4, 0],
+        },
+        heroTransition: { duration: 1.15, ease: "easeIn" },
+        particles: [
+          { x: -20, y: -20, scale: 0.9, delay: 0, rotate: -10 },
+          { x: 20, y: -20, scale: 0.9, delay: 0.04, rotate: 10 },
+          { x: -35, y: 15, scale: 1.1, delay: 0.1, rotate: -15 },
+          { x: 35, y: 15, scale: 1.1, delay: 0.12, rotate: 15 },
+          { x: 0, y: 45, scale: 1.2, delay: 0.15, rotate: 0 },
+        ],
+      };
+
+    case '👍':
+    default:
+      return {
+        duration: 1050,
+        hero: {
+          scale: [0, 1.75, 1.3, 0],
+          y: [20, -45, -60, -75],
+          rotate: [-20, 0, -5, 0],
+        },
+        heroTransition: { duration: 1.0, ease: [0.34, 1.56, 0.64, 1] },
+        particles: [
+          { x: -35, y: -50, scale: 0.85, delay: 0, rotate: -20 },
+          { x: 35, y: -50, scale: 0.85, delay: 0.03, rotate: 20 },
+          { x: -18, y: -75, scale: 1.1, delay: 0.05, rotate: -10 },
+          { x: 18, y: -75, scale: 1.1, delay: 0.07, rotate: 10 },
+          { x: 0, y: -90, scale: 1.25, delay: 0.09, rotate: 0 },
+        ],
+      };
   }
-} as const;
-
-const PARTICLE_CONFIGS = [
-  { 
-    className: "w-3 h-3 top-0 left-[40%]",
-    animate: { y: [-2, -12], opacity: [0.7, 0] },
-    transition: { duration: 0.7, ease: "easeOut" }
-  },
-  {
-    className: "w-2.5 h-2.5 top-[20%] right-[30%]",
-    animate: { y: [-1, -10], x: [0, 5], opacity: [0.6, 0] },
-    transition: { duration: 0.65, delay: 0.05, ease: "easeOut" }
-  },
-  {
-    className: "w-2 h-2 bottom-[30%] left-[20%]",
-    animate: { y: [0, -8], x: [0, -4], opacity: [0.5, 0] },
-    transition: { duration: 0.6, delay: 0.08, ease: "easeOut" }
-  }
-];
-
-const BackgroundBlur = () => (
-  <motion.div 
-    className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    transition={ANIMATION_CONFIG.backgroundBlur}
-  />
-);
-
-const ShadowEffect = ({ emoji }: { emoji: string }) => (
-  <motion.div 
-    className="absolute inset-0 blur-md opacity-30 scale-90 -z-10"
-    animate={{
-      opacity: [0.2, 0.4, 0.3, 0.25],
-      scale: [0.85, 0.9, 0.95, 0.9],
-    }}
-    transition={ANIMATION_CONFIG.shadowAnimation}
-  >
-    {emoji}
-  </motion.div>
-);
-
-const MainEmoji = ({ emoji }: { emoji: string }) => (
-  <motion.div
-    animate={{
-      rotate: [-2, 3, 0],
-      y: [0, -3, 0],
-      x: [0, 1, 0],
-    }}
-    transition={ANIMATION_CONFIG.rotationAnimation}
-  >
-    {emoji}
-  </motion.div>
-);
-
-const ParticleEffect = () => (
-  <motion.div 
-    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full"
-    initial={{ scale: 0.6, opacity: 0 }}
-    animate={{ 
-      scale: [0.8, 1.7],
-      opacity: [0.8, 0],
-    }}
-    transition={ANIMATION_CONFIG.particleAnimation}
-  >
-    {PARTICLE_CONFIGS.map((config, index) => (
-      <motion.div
-        key={index}
-        className={`absolute bg-white rounded-full blur-sm ${config.className}`}
-        animate={config.animate}
-        transition={config.transition}
-      />
-    ))}
-  </motion.div>
-);
-
-const GlowEffect = () => (
-  <motion.div
-    className="absolute inset-0 rounded-full bg-white/5 blur-xl -z-20"
-    initial={{ opacity: 0, scale: 0.5 }}
-    animate={{ 
-      opacity: [0, 0.4, 0.2, 0], 
-      scale: [0.8, 1.2, 1.4, 1.6]
-    }}
-    transition={ANIMATION_CONFIG.glowAnimation}
-  />
-);
+};
 
 export const ReactionAnimation = ({ emoji, onComplete }: ReactionAnimationProps) => {
-  const [visible, setVisible] = useState(true);
-  
+  const config = getEmojiAnimationConfig(emoji);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onComplete, ANIMATION_CONFIG.exitDelay);
-    }, ANIMATION_CONFIG.duration);
-    
+    const timer = setTimeout(onComplete, config.duration);
     return () => clearTimeout(timer);
-  }, [onComplete]);
-  
+  }, [onComplete, config.duration]);
+
   return (
-    <AnimatePresence mode="wait">
-      {visible && (
-        <motion.div 
-          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
+    <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
+      {/* Impact flash — a quick radial pulse right as the reaction lands,
+          giving the burst some weight before the particles scatter. */}
+      <motion.div
+        initial={{ opacity: 0.55, scale: 0.3 }}
+        animate={{ opacity: 0, scale: 2.1 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute w-10 h-10 rounded-full bg-white/40 blur-md"
+      />
+
+      {/* Custom Tailored Directional Particles */}
+      {config.particles.map((p, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            x: p.x,
+            y: p.y,
+            scale: [0.2, p.scale, p.scale * 0.9, 0],
+            rotate: p.rotate,
+          }}
+          transition={{
+            duration: config.duration / 1000 * 0.85,
+            delay: p.delay,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="absolute text-xl select-none transform-gpu"
         >
-          <BackgroundBlur />
-          
-          <motion.div
-            className="text-7xl relative"
-            initial={{ scale: 0.1, y: 150, opacity: 0 }}
-            animate={{ 
-              scale: [0.2, 1.5, 1.35, 1.3],
-              opacity: [0, 1, 1, 0.95],
-              y: [150, -15, -50, -200],
-            }}
-            exit={{ 
-              opacity: [0.95, 0.7, 0],
-              scale: [1.3, 1.1, 0.8],
-              y: [-200, -230, -250],
-            }}
-            transition={ANIMATION_CONFIG.emojiAnimation}
-          >
-            <ShadowEffect emoji={emoji} />
-            <MainEmoji emoji={emoji} />
-            <ParticleEffect />
-            <GlowEffect />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          {emoji}
+        </motion.span>
+      ))}
+
+      {/* Custom Tailored Main Hero Emoji Animation */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0, y: 10 }}
+        animate={{
+          opacity: [0, 1, 1, 0],
+          ...config.hero,
+        }}
+        transition={config.heroTransition}
+        className="text-4xl select-none transform-gpu drop-shadow-lg"
+      >
+        {emoji}
+      </motion.div>
+    </div>
   );
 };

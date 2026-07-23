@@ -28,7 +28,6 @@ interface BaseMessage {
   id: string;
   sender: "user" | "assistant";
   timestamp?: string | number;
-  reactions?: string[];
 }
 
 export interface TextMessage extends BaseMessage {
@@ -59,13 +58,6 @@ export interface MusicMessage extends BaseMessage {
   content?: string;
 }
 
-export interface CTAMessage extends BaseMessage {
-  type: "cta";
-  content: string;
-  link: string;
-  linkText?: string;
-}
-
 export interface PhotosMessage extends BaseMessage {
   type: "photos";
   content?: string;
@@ -85,26 +77,6 @@ export type MessageType =
   | ProjectMessage
   | LocationMessage
   | MusicMessage
-  | CTAMessage
   | PhotosMessage
   | ResumeMessage;
 
-export type MessageVariant = MessageType['type'];
-
-export type Sender = BaseMessage['sender'];
-
-export const MESSAGE_TYPES = {
-  TEXT: 'text',
-  BLOG: 'blog',
-  PROJECT: 'project',
-  LOCATION: 'location',
-  MUSIC: 'music',
-  CTA: 'cta',
-  PHOTOS: 'photos',
-  RESUME: 'resume'
-} as const;
-
-export const SENDERS = {
-  USER: 'user',
-  ASSISTANT: 'assistant'
-} as const;

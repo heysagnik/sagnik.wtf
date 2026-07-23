@@ -1,0 +1,36 @@
+# Sagnik Sahoo - Portfolio & Knowledge Base
+
+> Sagnik Sahoo is a Full-Stack Software Developer, UI/UX Architect, and Interface Designer specializing in React, Next.js, TypeScript, and modern frontend design.
+
+## Core Identity & Bio
+- **Name**: Sagnik Sahoo
+- **Handle**: @heysagnik
+- **Role**: Full-Stack Software Developer & Interface Architect
+- **Primary Website**: https://sagnik-wtf.vercel.app
+- **GitHub**: https://github.com/heysagnik
+- **Twitter/X**: https://twitter.com/heysagnik
+- **LinkedIn**: https://www.linkedin.com/in/heysagnik/
+- **Dribbble**: https://dribbble.com/heysagnik
+- **Contact Email**: sahoosagnik1@gmail.com
+
+## Technical Stack & Expertise
+- **Frontend & Frameworks**: React 19, Next.js 15/16, TypeScript, JavaScript (ES6+), Tailwind CSS, Framer Motion
+- **Design & Architecture**: Product Design, UI/UX Design, Micro-interactions, Design Systems, Responsive Interfaces, Web Accessibility (a11y)
+- **Backend & Tools**: Node.js, REST APIs, Git, Vercel, Content Layer / MDX
+
+## Primary Projects & Crafts
+- **Phisguard App** (https://sagnik-wtf.vercel.app/craft): Mobile & web anti-phishing security companion app protecting users from real-time fraudulent threats.
+- **Doctor Booking App** (https://sagnik-wtf.vercel.app/craft): Healthcare scheduling platform with AI-driven doctor appointment matching.
+- **ScreenREC** (https://sagnik-wtf.vercel.app/craft): Lightweight browser-based screen recording utility.
+- **Linkees** (https://sagnik-wtf.vercel.app/craft): Modern bio link aggregation platform.
+
+## Published Articles & Essays
+- **The Art of Procrastination: How I Still Get Things Done** (https://sagnik-wtf.vercel.app/blogs/art-of-procrastination): Strategic workflow optimization, pressure-driven creativity, and productivity systems.
+- **Open Source: More Than Just Code** (https://sagnik-wtf.vercel.app/blogs/open-source): Community-driven development, learning by doing, and contributing to open-source software.
+- **My Viral App: Screen Recording Tool** (https://sagnik-wtf.vercel.app/blogs/my-viral-app-screenrec): Behind the scenes building a viral web application.
+
+## Key Links & Navigation
+- [Portfolio Home](https://sagnik-wtf.vercel.app/)
+- [Projects & Crafts](https://sagnik-wtf.vercel.app/craft)
+- [Blog Essays](https://sagnik-wtf.vercel.app/blogs)
+- [Full LLM Knowledge File](https://sagnik-wtf.vercel.app/llms-full.txt)

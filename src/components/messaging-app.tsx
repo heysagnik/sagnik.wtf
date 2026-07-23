@@ -1,44 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useMessages } from "@/hooks/useMessages";
-import { useScrollBehavior } from "@/hooks/useScrollBehavior";
-import MessageList from "@/components/message-list";
-import StaticMessageList from "@/components/static-message-list";
+import { useMessageReactions } from "@/hooks/useMessageReactions";
+import Header from "@/components/header";
+import MessageBubble from "@/components/message-bubble";
 import { MessageInput } from "@/components/message-input";
 import CompactHeader from "@/components/compact-header";
-import NewMessagesNotification from "@/components/new-messages-notification";
 import TypingIndicator from "@/components/typing-indicator";
-import type { MessageType } from "@/lib/types";
+import { SPACING } from "@/lib/layout";
+import { computeLastInGroupFlags } from "@/lib/message-grouping";
 
 interface MessagingAppProps {
+  /** Returning from another page (e.g. blog) — load messages instantly instead of the staggered reveal. */
   skipIntroAnimation?: boolean;
 }
 
 const TIMING_CONFIG = {
-  charDelay: 20,
-  minDuration: 200,
-  maxDuration: 1500,
   timestampVisibility: 100,
   scrollToBottom: 100,
-  typingIndicatorAnimation: 100
 } as const;
 
-const ANIMATION_CONFIG = {
-  typing: {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 5 },
-    transition: { duration: TIMING_CONFIG.typingIndicatorAnimation / 1000 }
-  },
-  noTyping: {
-    initial: { opacity: 1, y: 0 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 1, y: 0 },
-    transition: { duration: 0 }
-  }
-} as const;
+// If the reader has scrolled further than this from the bottom, treat them as
+// reading — new messages arriving during the staggered reveal won't yank the
+// view back down.
+const NEAR_BOTTOM_THRESHOLD = 80;
 
 const LAYOUT_CONFIG = {
   topGradient: "absolute top-0 left-0 right-0 h-16 sm:h-20 z-10 pointer-events-none",
@@ -46,92 +32,6 @@ const LAYOUT_CONFIG = {
   footer: "bg-black/95 backdrop-blur-sm w-full flex-shrink-0 border-t border-white/5",
   footerGradient: "absolute top-[-1px] inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
 } as const;
-
-const useTypingCalculation = () => {
-  const calculateTypingDelay = useCallback((content: string) => {
-    return Math.min(
-      Math.max(
-        TIMING_CONFIG.minDuration,
-        content.length * TIMING_CONFIG.charDelay
-      ),
-      TIMING_CONFIG.maxDuration
-    );
-  }, []);
-
-  return { calculateTypingDelay };
-};
-
-const useMessageReveal = (
-  messages: MessageType[],
-  skipIntroAnimation: boolean
-) => {
-  const [visibleMessages, setVisibleMessages] = useState<MessageType[]>(
-    skipIntroAnimation ? messages : []
-  );
-  const [isGraduallyTyping, setIsGraduallyTyping] = useState(!skipIntroAnimation);
-  const prevProcessedMessagesLength = useRef(0);
-  const { calculateTypingDelay } = useTypingCalculation();
-
-  useEffect(() => {
-    if (skipIntroAnimation) {
-      setIsGraduallyTyping(false);
-      return;
-    }
-  }, [skipIntroAnimation]);
-
-  useEffect(() => {
-    if (skipIntroAnimation && messages.length > 0) {
-      setVisibleMessages(messages);
-      setIsGraduallyTyping(false);
-      prevProcessedMessagesLength.current = messages.length;
-      return;
-    }
-    
-    if (messages.length === 0 || messages.length <= prevProcessedMessagesLength.current) {
-      return;
-    }
-
-    const nextMessageToReveal = messages[visibleMessages.length];
-    if (!nextMessageToReveal) {
-      if (prevProcessedMessagesLength.current < messages.length) {
-        prevProcessedMessagesLength.current = messages.length;
-      }
-      return;
-    }
-
-    setIsGraduallyTyping(true);
-
-    const typingDelay = calculateTypingDelay(nextMessageToReveal.content || "");
-
-    const timer = setTimeout(() => {
-      setIsGraduallyTyping(false);
-      setVisibleMessages((current) => {
-        const newVisible = [...current, nextMessageToReveal];
-        prevProcessedMessagesLength.current = newVisible.length;
-        return newVisible;
-      });
-    }, typingDelay);
-
-    return () => clearTimeout(timer);
-  }, [messages, visibleMessages, skipIntroAnimation, calculateTypingDelay]);
-
-  return { visibleMessages, isGraduallyTyping };
-};
-
-const useNotificationState = (isScrolledUp: boolean, messages: MessageType[]) => {
-  const [newMessageCount, setNewMessageCount] = useState(0);
-
-  useEffect(() => {
-    if (isScrolledUp && messages.length > 0) {
-      const currentNewMessageCount = newMessageCount;
-      if (currentNewMessageCount < messages.length) {
-        setNewMessageCount(currentNewMessageCount + 1);
-      }
-    }
-  }, [isScrolledUp, messages.length, newMessageCount]);
-
-  return { newMessageCount, setNewMessageCount };
-};
 
 const TopGradient = () => (
   <div className={LAYOUT_CONFIG.topGradient}>
@@ -151,24 +51,52 @@ const SafeAreaSpacer = ({ position }: { position: 'top' | 'bottom' }) => (
 );
 
 const MessagingApp = ({ skipIntroAnimation = false }: MessagingAppProps) => {
-  const { messages, isTyping: isApiTyping, addMessage } = useMessages();
+  const { messages, isTyping: isApiTyping, addMessage, messageIds } = useMessages(skipIntroAnimation);
   const [isTimestampVisible, setIsTimestampVisible] = useState(false);
 
-  const { visibleMessages, isGraduallyTyping } = useMessageReveal(messages, skipIntroAnimation);
+  const uniqueMessages = useMemo(() =>
+    [...new Map(messages.map(msg => [msg.id, msg])).values()],
+    [messages]
+  );
 
-  const {
-    containerRef,
-    isScrolledUp,
-    isHeaderScrolled,
-    scrollToBottom,
-    autoScrollOnNewContent,
-  } = useScrollBehavior();
+  // messageIds is the full scripted set, known and stable from mount — unlike
+  // uniqueMessages it doesn't grow through the staggered reveal, so this
+  // fetches reactions once instead of once per reveal step.
+  const { reactionsForMessage, toggleReaction } = useMessageReactions(messageIds);
 
-  const { newMessageCount, setNewMessageCount } = useNotificationState(isScrolledUp, messages);
+  // A message is the "last in group" — and gets the avatar + tail corner —
+  // when the next message switches sender or arrives after a long enough
+  // pause (see lib/message-grouping.ts), or it's the last message overall
+  // and no reply is still in flight. While isApiTyping is true, the typing
+  // indicator is the visual tail instead, so the last message hands it off.
+  const lastInGroupFlags = useMemo(
+    () => computeLastInGroupFlags(uniqueMessages, isApiTyping),
+    [uniqueMessages, isApiTyping]
+  );
 
-  const isTyping = skipIntroAnimation ? false : (isApiTyping || isGraduallyTyping);
-  const showCompactHeader = isHeaderScrolled && !isTimestampVisible;
-  const typingAnimationConfig = skipIntroAnimation ? ANIMATION_CONFIG.noTyping : ANIMATION_CONFIG.typing;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
+  }, []);
+
+  useEffect(() => {
+    // Only follow new messages down if the reader hasn't scrolled away to
+    // read earlier ones — lets them scroll up mid-reveal without being
+    // pulled back to the bottom every time the next message pops in.
+    if (isNearBottomRef.current) {
+      scrollToBottom();
+    }
+  }, [messages, isApiTyping, scrollToBottom]);
 
   const handleTimestampVisibilityChange = useCallback((isVisible: boolean) => {
     setTimeout(() => {
@@ -176,20 +104,13 @@ const MessagingApp = ({ skipIntroAnimation = false }: MessagingAppProps) => {
     }, isVisible ? 0 : TIMING_CONFIG.timestampVisibility);
   }, []);
 
-  const handleScrollToBottom = useCallback(() => {
-    scrollToBottom();
-    setNewMessageCount(0);
-  }, [scrollToBottom, setNewMessageCount]);
-
   const handleSendMessage = useCallback((content: string) => {
     addMessage(content);
+    isNearBottomRef.current = true;
     setTimeout(scrollToBottom, TIMING_CONFIG.scrollToBottom);
-    setNewMessageCount(0);
-  }, [addMessage, scrollToBottom, setNewMessageCount]);
+  }, [addMessage, scrollToBottom]);
 
-  useEffect(() => {
-    autoScrollOnNewContent();
-  }, [visibleMessages, isTyping, autoScrollOnNewContent]);
+  const showCompactHeader = !isTimestampVisible;
 
   return (
     <div className="w-full h-full flex flex-col bg-black overflow-hidden">
@@ -198,46 +119,49 @@ const MessagingApp = ({ skipIntroAnimation = false }: MessagingAppProps) => {
       
       <CompactHeader isVisible={showCompactHeader} />
 
-      <AnimatePresence>
-        {isScrolledUp && newMessageCount > 0 && showCompactHeader && (
-          <NewMessagesNotification
-            count={2}
-            onClick={handleScrollToBottom}
-          />
-        )}
-      </AnimatePresence>
-
       <div
         ref={containerRef}
+        onScroll={handleScroll}
         className={LAYOUT_CONFIG.container}
-        style={{ 
-          WebkitOverflowScrolling: "touch", 
-          scrollbarWidth: "none", 
-          msOverflowStyle: "none" 
+        style={{
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none"
         }}
       >
-        {skipIntroAnimation ? (
-          <StaticMessageList />
-        ) : (
-          <MessageList
-            messages={visibleMessages}
-            onTimestampVisibilityChange={handleTimestampVisibilityChange}
-            skipAnimation={skipIntroAnimation}
-          />
-        )}
-        <div className="h-4"></div>
+        <div className="w-full max-w-3xl mx-auto flex flex-col">
+          <div className={`${SPACING.top} flex-shrink-0`} />
+
+          <div className={`${SPACING.header} relative`}>
+            <Header onTimestampVisibilityChange={handleTimestampVisibilityChange} />
+          </div>
+
+          <div className={`${SPACING.headerBottom} flex-shrink-0`} />
+
+          <div className={`${SPACING.messages} mt-auto`}>
+            {uniqueMessages.map((message, index) => (
+              <div key={message.id || `msg-${index}`} className="w-full">
+                <MessageBubble
+                  message={message}
+                  animate={!skipIntroAnimation}
+                  isLastInGroup={lastInGroupFlags[index]}
+                  reactions={reactionsForMessage(message.id)}
+                  onToggleReaction={toggleReaction}
+                />
+              </div>
+            ))}
+
+            <div className={`${SPACING.bottom} flex-shrink-0`} />
+          </div>
+        </div>
+        <div className="h-4" ref={messagesEndRef}></div>
       </div>
 
-      <AnimatePresence>
-        {isTyping && (
-          <motion.div
-            className="px-3 pt-1 pb-1"
-            {...typingAnimationConfig}
-          >
-            <TypingIndicator showAvatar skipAnimation={skipIntroAnimation} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isApiTyping && (
+        <div className="px-3 pt-1 pb-1">
+          <TypingIndicator />
+        </div>
+      )}
 
       <FooterSection onSend={handleSendMessage} />
       <SafeAreaSpacer position="bottom" />

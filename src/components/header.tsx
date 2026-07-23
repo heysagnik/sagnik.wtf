@@ -1,16 +1,10 @@
 import { memo, useRef, useEffect, useMemo } from "react"
 import Image from "next/image"
+import { PROFILE } from "@/lib/profile"
 
 interface HeaderProps {
   onTimestampVisibilityChange?: (isVisible: boolean) => void
 }
-
-const PROFILE_DATA = {
-  name: "Sagnik Sahoo",
-  username: "@heysagnik",
-  bio: "Product developer. Always curious.",
-  details: ["Estd. 2005", "Haldia, India", "he/him"]
-} as const
 
 const Header = memo<HeaderProps>(({ onTimestampVisibilityChange }) => {
   const timestampRef = useRef<HTMLDivElement>(null)
@@ -60,21 +54,21 @@ const Header = memo<HeaderProps>(({ onTimestampVisibilityChange }) => {
         </div>
         
         <h1 className="font-bold text-white/95 text-base sm:text-lg md:text-xl tracking-tight">
-          {PROFILE_DATA.name}
+          {PROFILE.name}
         </h1>
         <p className="text-white/60 text-xs sm:text-sm mb-1">
-          {PROFILE_DATA.username}
+          {PROFILE.username}
         </p>
         
         <p className="text-white/80 text-xs sm:text-sm text-center max-w-xs mb-2 px-4">
-          {PROFILE_DATA.bio}
+          {PROFILE.bio}
         </p>
                         
         <div className="flex items-center flex-wrap justify-center gap-1 text-white/50 text-xs px-2">
-          {PROFILE_DATA.details.map((detail, index) => (
+          {PROFILE.details.map((detail, index) => (
             <span key={detail}>
               {detail}
-              {index < PROFILE_DATA.details.length - 1 && (
+              {index < PROFILE.details.length - 1 && (
                 <span className="mx-0.5">•</span>
               )}
             </span>
