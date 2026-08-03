@@ -155,11 +155,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(portfolioSchema) }}
         />
         <Script
-          id="analytics-script"
-          src="https://my-github-cdn.vercel.app/api/cdn?file=script.js"
-          strategy="afterInteractive"
-        />
-        <Script
           id="diy-analytics-tracker"
           src="https://diy-analytics.vercel.app/api/tracker.js?site-id=site_b55n5oyvyao666k9"
           strategy="afterInteractive"
