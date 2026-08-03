@@ -159,6 +159,11 @@ export default function RootLayout({
           src="https://my-github-cdn.vercel.app/api/cdn?file=script.js"
           strategy="afterInteractive"
         />
+        <Script
+          id="diy-analytics-tracker"
+          src="https://diy-analytics.vercel.app/api/tracker.js?site-id=site_b55n5oyvyao666k9"
+          strategy="afterInteractive"
+        />
         <Analytics />
       </body>
     </html>
